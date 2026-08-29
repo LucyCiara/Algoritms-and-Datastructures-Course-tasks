@@ -24,10 +24,10 @@ void printIntArrArray(int **input, int length1, int length2) {
 }
 
 bool compare(int a, int b, int *comparator) {
-  if ((a > b) && *comparator <= 0) {
+  if (a > 0 && b < 0) {
     *comparator = 1;
     return true;
-  } else if ((a < b) && *comparator >= 0) {
+  } else if (a < 0 && b > 0) {
     *comparator = -1;
     return true;
   }
@@ -39,6 +39,8 @@ int ***findExtremums(int *data, int length, int *sizeMinima, int *sizeMaxima) {
     printf("Input data needs to be longer than 2.");
     return 0;
   }
+  int value = 0;
+
   *sizeMaxima = 0;
   *sizeMaxima = 0;
   int ***extremums = (int ***)malloc(2 * sizeof(int **));
@@ -47,90 +49,90 @@ int ***findExtremums(int *data, int length, int *sizeMinima, int *sizeMaxima) {
   int comparator = 0;
   int i;
   for (i = 1; i < length; i++) {
-    if (compare(data[i], data[i - 1], &comparator)) {
-      if (comparator < 1) {
+    value += data[i - 1];
+    // printf("a:[%d,%d]\n", i, data[i]);
+    // printf("b:[%d,%d]\n", i - 1, data[i - 1]);
+    bool isExtremum = compare(data[i], data[i - 1], &comparator);
+    // printf("%d\n", isExtremum);
+    if (isExtremum) {
+      if (comparator > 0) {
         *sizeMinima += 1;
         minima = (int **)realloc(minima, *sizeMinima * sizeof(int *));
         minima[*sizeMinima - 1] = (int *)malloc(2 * sizeof(int));
         minima[*sizeMinima - 1][0] = i - 1;
-        minima[*sizeMinima - 1][1] = data[i - 1];
+        minima[*sizeMinima - 1][1] = value;
 
       } else {
         *sizeMaxima += 1;
         maxima = (int **)realloc(maxima, *sizeMaxima * sizeof(int *));
         maxima[*sizeMaxima - 1] = (int *)malloc(2 * sizeof(int));
         maxima[*sizeMaxima - 1][0] = i - 1;
-        maxima[*sizeMaxima - 1][1] = data[i - 1];
+        maxima[*sizeMaxima - 1][1] = value;
       }
     }
   }
-  if (comparator > 1) {
+  value += data[length - 1];
+  if (comparator < 0) {
     *sizeMinima += 1;
     minima = (int **)realloc(minima, *sizeMinima * sizeof(int *));
     minima[*sizeMinima - 1] = (int *)malloc(2 * sizeof(int));
     minima[*sizeMinima - 1][0] = i - 1;
-    minima[*sizeMinima - 1][1] = data[i - 1];
+    minima[*sizeMinima - 1][1] = value;
 
   } else {
     *sizeMaxima += 1;
     maxima = (int **)realloc(maxima, *sizeMaxima * sizeof(int *));
     maxima[*sizeMaxima - 1] = (int *)malloc(2 * sizeof(int));
     maxima[*sizeMaxima - 1][0] = i - 1;
-    maxima[*sizeMaxima - 1][1] = data[i - 1];
+    maxima[*sizeMaxima - 1][1] = value;
   }
   extremums[0] = minima;
   extremums[1] = maxima;
   return extremums;
 }
 
-int *findGlobalMaxima(int *data, int length) {
-  int *max = (int *)malloc(2 * sizeof(int));
-  max[0] = 0;
-  max[1] = data[0];
-  for (int i = 1; i < length; i++) {
-    if (data[i] > max[1]) {
-      max[0] = i;
-      max[1] = data[i];
-    }
+int **findIdealTransaction(int ***extremums, int minimaLength,
+                           int maximaLength) {
+  int **idealTransaction = (int **)malloc(2 * sizeof(int *));
+  idealTransaction[0] = (int *)malloc(2 * sizeof(int));
+  idealTransaction[0] = extremums[0][0];
+  idealTransaction[1] = (int *)malloc(2 * sizeof(int));
+  idealTransaction[1] = extremums[1][0];
+  int startJ = 0;
+  if (extremums[1][0][0] == 0) {
+    startJ = 1;
   }
-  return max;
-}
-
-int *findGlobalMinima(int *data, int length) {
-  int *min = (int *)malloc(2 * sizeof(int));
-  min[0] = 0;
-  min[1] = data[0];
-  for (int i = 1; i < length; i++) {
-    if (data[i] < min[1]) {
-      min[0] = i;
-      min[1] = data[i];
+  for (int i = 0; i < minimaLength; i++) {
+    for (int j = startJ; j < maximaLength; j++) {
+      // printf("i: %d, j: %d\n", i, j);
+      // printIntArray(extremums[0][i], 2);
+      // printIntArray(extremums[1][j], 2);
+      // printf("\n");
+      if (extremums[1][j][1] - extremums[0][i][1] >
+          idealTransaction[1][1] - idealTransaction[0][1]) {
+        idealTransaction[0] = extremums[0][i];
+        idealTransaction[1] = extremums[1][j];
+      }
     }
+    startJ += 1;
   }
-  return min;
+  return idealTransaction;
 }
-
-// int **findIdealTransaction(int *x400153Data, int length) {
-//   int **idealTransaction = (int **)malloc() for ()
-// }
-
 int main() {
   int lossGain[] = {-1, 3, -9, 2, 2, -1, 2, -1, -5};
   int length = sizeof(lossGain) / sizeof(int);
   printIntArray(lossGain, length);
-
-  int *max = findGlobalMaxima(lossGain, length);
-  printIntArray(max, 2);
-  free(max);
-  int *min = findGlobalMinima(lossGain, length);
-  printIntArray(min, 2);
-  free(min);
-
   int minimaLength = 0;
   int maximaLength = 0;
   int ***extremums =
       findExtremums(lossGain, length, &minimaLength, &maximaLength);
+
+  printIntArrArray(extremums[0], minimaLength, 2);
   printIntArrArray(extremums[1], maximaLength, 2);
-  free(extremums);
+
+  int **idealTransaction =
+      findIdealTransaction(extremums, minimaLength, maximaLength);
+  printIntArrArray(idealTransaction, 2, 2);
 
   return 0;
 }
