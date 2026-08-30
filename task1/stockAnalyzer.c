@@ -1,7 +1,9 @@
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 void printIntArray(int *input, int length) {
   printf("[");
@@ -91,6 +93,7 @@ int ***findExtremums(int *data, int length, int *sizeMinima, int *sizeMaxima) {
     maxima[*sizeMaxima - 1][0] = i - 1;
     maxima[*sizeMaxima - 1][1] = value;
   }
+
   extremums[0] = minima;
   extremums[1] = maxima;
   return extremums;
@@ -140,6 +143,47 @@ int **findIdealTransaction(int ***extremums, int minimaLength,
   }
   return idealTransaction;
 }
+
+void free2dIntArray(int **array, int length) {
+  for (int i = 0; i < length; i++) {
+    free(array[i]);
+  }
+  free(array);
+}
+
+void free3dIntArray(int ***array, int length, int *lengths2) {
+  for (int i = 0; i < length; i++) {
+    free2dIntArray(array[i], lengths2[i]);
+  }
+  free(array);
+}
+
+void testStockAnalyzer(int repetitions, int n) {
+  double time = 0;
+  for (int i = 0; i < repetitions; i++) {
+    int *data = malloc(n * sizeof(int));
+    for (int j = 0; j < n; j++) {
+      data[j] = rand() - RAND_MAX / 2;
+    }
+
+    clock_t t;
+    t = clock();
+    int minimaLength = 0;
+    int maximaLength = 0;
+    int ***extremums = findExtremums(data, n, &minimaLength, &maximaLength);
+    int **idealTransaction =
+        findIdealTransaction(extremums, minimaLength, maximaLength);
+    t = clock() - t;
+    time += ((double)t) / CLOCKS_PER_SEC;
+    int lengths2[] = {minimaLength, maximaLength};
+    free3dIntArray(extremums, 2, lengths2);
+    free(idealTransaction);
+    free(data);
+  }
+  time = time / repetitions;
+  printf("Time for n=%d: %.5f\n", n, time);
+}
+
 int main() {
   // Runs once
   int lossGain[] = {-1, 3, -9, 2, 2, -1, 2, -1, -5};
@@ -151,19 +195,40 @@ int main() {
   int ***extremums =
       findExtremums(lossGain, length, &minimaLength, &maximaLength);
 
-  // A nested loop running (n-k)((n-k)+1)/2 times, or 1/2*(n-k)**2 + 1/2*(n-k),
-  // where k ∈ {2, 3, ..., n}
+  // A nested loop running ((n-k)/2)((n-k)/2+1)/2 times, or 1/2*((n-k)/2)^2 +
+  // 1/2*((n-k)/2), where k ∈ {0, ..., n - 2}
   int **idealTransaction =
       findIdealTransaction(extremums, minimaLength, maximaLength);
 
   // Runs once
+  int lengths2[] = {minimaLength, maximaLength};
   printf("The ideal transaction buys on day %d, and sells on day %d, with a "
          "profit of %d.\n",
          idealTransaction[0][0] + 1, idealTransaction[1][0] + 1,
          idealTransaction[1][1] - idealTransaction[0][1]);
-  return 0;
 
-  // f(n) ≈ 1/2*(n-k)**2 + 1/2*(n-k) + n + 1, where k ∈ {2, 3, ..., n}.
-  // f(n) ∈ O(n**2)
-  // f(n) ∈ Ω(n), because in an ideal scenario, there would be only 2 extremums.
+  free3dIntArray(extremums, 2, lengths2);
+  free(idealTransaction);
+
+  // f(n) ≈ 1/2*((n-k)/2)^2 + 1/2*((n-k)/2) + n + 1, where k ∈ {0, .., n - 2}.
+  // This approximation has been confirmed in a graphical plotting tool using
+  // the output from testing the algorithm.
+  //
+  // f(n) ∈ O((n/2)^2) = O(n²), because
+  // in the worst case scenario, every value in data would be an extremum (k =
+  // 0).
+  //
+  // f(n) ∈ Ω(n), because in an ideal scenario, there would be only 2
+  // extremums (k = n - 2).
+
+  // Tests the algorithm for 4 different n (100, 10000, 10000, 100000), doing so
+  // 5 times and running the average. 100000 iterations can take around a minute
+  // to complete, for a total of 5 minutes with repetitions.
+  srand(time(0));
+  for (int i = 0; i < 3; i++) {
+    int n = 1000 * pow(10, i);
+    testStockAnalyzer(50, n);
+  }
+
+  return 0;
 }
