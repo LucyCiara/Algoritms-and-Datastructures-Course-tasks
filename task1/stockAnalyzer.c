@@ -45,13 +45,9 @@ bool compare(int a, int b, int *comparator) {
 // **maxima}, where each point is an int array {index, value-after-change}.
 // O
 int ***findExtremums(int *data, int length, int *sizeMinima, int *sizeMaxima) {
-  if (length < 2) {
-    printf("Input data needs to be longer than 2.");
-    return 0;
-  }
   int value = 0;
 
-  *sizeMaxima = 0;
+  *sizeMinima = 0;
   *sizeMaxima = 0;
   int ***extremums = (int ***)malloc(2 * sizeof(int **));
   int **minima = (int **)malloc(1 * sizeof(int *));
@@ -94,6 +90,20 @@ int ***findExtremums(int *data, int length, int *sizeMinima, int *sizeMaxima) {
     maxima[*sizeMaxima - 1][1] = value;
   }
 
+  if (*sizeMinima == 0) {
+    *sizeMinima += 1;
+    minima = (int **)realloc(minima, *sizeMinima * sizeof(int *));
+    minima[*sizeMinima - 1] = (int *)malloc(2 * sizeof(int));
+    minima[*sizeMinima - 1][0] = 0;
+    minima[*sizeMinima - 1][1] = 0 + data[0];
+  } else if (*sizeMaxima == 0) {
+    *sizeMaxima += 1;
+    maxima = (int **)realloc(maxima, *sizeMaxima * sizeof(int *));
+    maxima[*sizeMaxima - 1] = (int *)malloc(2 * sizeof(int));
+    maxima[*sizeMaxima - 1][0] = 0;
+    maxima[*sizeMaxima - 1][1] = 0 + data[0];
+  }
+
   extremums[0] = minima;
   extremums[1] = maxima;
   return extremums;
@@ -107,9 +117,7 @@ int **findIdealTransaction(int ***extremums, int minimaLength,
   // Assigns memory to arrays, and set starting ideal transaction to the first
   // minima and maxima.
   int **idealTransaction = (int **)malloc(2 * sizeof(int *));
-  idealTransaction[0] = (int *)malloc(2 * sizeof(int));
   idealTransaction[0] = extremums[0][0];
-  idealTransaction[1] = (int *)malloc(2 * sizeof(int));
   idealTransaction[1] = extremums[1][0];
 
   // If the stocks only decrease, then the ideal transaction is to sell
@@ -221,14 +229,13 @@ int main() {
   // f(n) ∈ Ω(n), because in an ideal scenario, there would be only 2
   // extremums (k = n - 2).
 
-  // Tests the algorithm for 4 different n (100, 10000, 10000, 100000), doing so
-  // 5 times and running the average. 100000 iterations can take around a minute
-  // to complete, for a total of 5 minutes with repetitions.
+  // Tests the algorithm for different n. The number of repetitions are higher
+  // for lower n to make up for a lack in accuracy and to utilitze faster
+  // completion time to run more simulations.
   srand(time(0));
-  for (int i = 0; i < 3; i++) {
-    int n = 1000 * pow(10, i);
-    testStockAnalyzer(50, n);
-  }
+  testStockAnalyzer(100, 1000);
+  testStockAnalyzer(10, 10000);
+  testStockAnalyzer(1, 100000);
 
   return 0;
 }
