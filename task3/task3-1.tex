@@ -1,0 +1,103 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage[colorlinks]{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{realboxes}
+\usepackage{float}
+
+\title{Øving 3, algoritmer og datastrukturer. Alternativ 1, sammenligne ulike typer quicksort}
+\author{Lucy Ciara Herud-Thomassen}
+
+\begin{document}
+  \maketitle
+
+  \section{Algorithms}
+    \subsection{Mono Pivot Quicksort}
+      This algorithm was takes from the book, but with slightly improved pivot selection. \autoref{fig:1} \autoref{fig:2} \autoref{fig:3}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{median3Sort.png}
+          \caption{Slightly modified median3Sort}
+        \end{center}
+        \label{fig:1}
+      \end{figure}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{split.png}
+          \caption{Split method from the book}
+        \end{center}
+        \label{fig:2}
+      \end{figure}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{MPQS.png}
+          \caption{Mono Pivot Quicksort from the book}
+        \end{center}
+        \label{fig:3}
+      \end{figure}
+
+    \subsection{Dual Pivot Quicksort (Geeks4Geeks)}
+      This algorithm was taken from Geeks4Geeks, and minimally modified. Had to implement better pivot selection to prevent overflow. \autoref{fig:4} \autoref{fig:5}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{partition.png}
+          \caption{Array partitioning taken from the G4G (Geeks4Geeks) website}
+        \end{center}
+        \label{fig:4}
+      \end{figure}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{DPQSG4G.png}
+          \caption{Dual Pivot Quicksort from G4G}
+        \end{center}
+        \label{fig:5}
+      \end{figure}
+
+    \subsection{Dual Pivot Quicksort (Self-made)}
+      This algorithm was inspired by both Geeks4Geeks' Dual Pivot Quicksort, and the book's Mono Pivot Quicksort, combining dual pivots with some optimizations. Further optimizations could've been done through transitioning into insertion sorting when arrays get small enough, or maybe through parallellization. \autoref{fig:6} \autoref{fig:7} \autoref{fig:8}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{quartile4Sort.png}
+          \caption{A self-made 4 value version of median3Sort. Uses optimal sorting of 4 numbers}
+        \end{center}
+        \label{fig:6}
+      \end{figure}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{splitDual.png}
+          \caption{Self-made Dual Pivot version of Split}
+        \end{center}
+        \label{fig:7}
+      \end{figure}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{DPQS.png}
+          \caption{Self-made Dual Pivot Quicksort}
+        \end{center}
+        \label{fig:8}
+      \end{figure}
+
+  \section{Time Tests}
+    \begin{figure}[H]
+      \begin{center}
+        \includegraphics[width=0.75\linewidth]{time-tests.png}
+        \caption{Time tests for different array conditions}
+      \end{center}
+      \label{fig:9}
+    \end{figure}
+    As can be seen above in \autoref{fig:9}, the algorithms perform very similarly to eachother, although the rankings are as follows:
+    Normal array: Self-made algorithm, book algorithm, G4G algorithm.
+    Sorted array: Self-made algoritm, book algorithm, G4G algorithm.
+    Reversed sorted array: G4G algorithm, self-made algorithm, book algorithm.
+    Many duplicates array: self-made algorithm, book algorithm, G4G algorithm.
+
+    The self-made algorithm seems to consistently hit first place, with the book version as the second place, except for the reversed sorted array, in which the G4G algorithm jumps to 1st place. Though it must be kept in mind that they are close enough that it might not mean much, and different attempts produce different results.
+    The time taking was done with copies of the same array for each algorithm. The sorted arrays are also sorted versions of the same initial array, sorted throug C's standard qsort algorithm, and reversed by a self-implemented method.
+
+    Important! The n used for testing is 200000 because more will risk hitting the stack limit. Higher numbers will require changing/removing stack limits.
+
+ 
+
+\end{document}

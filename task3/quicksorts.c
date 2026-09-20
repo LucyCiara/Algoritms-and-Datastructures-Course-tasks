@@ -15,7 +15,7 @@ void swap(int *a, int *b) {
 }
 
 int median3Sort(int *unSorted, int l, int h) {
-  // Forbedret fra eksempelet i boka
+  // Improved from the example in the book. >> 1 is faster than / 2.
   int m = (l + h) >> 1;
   if (unSorted[l] > unSorted[m]) {
     swap(&unSorted[l], &unSorted[m]);
@@ -29,7 +29,9 @@ int median3Sort(int *unSorted, int l, int h) {
   return m;
 }
 
+// A medion3Sort equivalent for Dual Pivot QS.
 void quartile4Sort(int *unSorted, int l, int h, int *q1, int *q3) {
+
   if (h - l != 3) {
     int m = (l + h) >> 1;
     *q1 = (l + m) >> 1;
@@ -81,16 +83,31 @@ void splitDual(int *unSorted, int l, int h, int *lp, int *rp) {
   swap(&unSorted[q3], &unSorted[h - 1]);
   swap(&unSorted[q1], &unSorted[l + 1]);
   for (il = l + 1, ih = h - 2, im = il;;) {
+    // Iterates while values are within <p, q>
     while (unSorted[++im] > p && unSorted[im] < q)
       ;
+
+    // Of values outside of <p,q>, values < q are swapped to the side with
+    // smaller numbers, as il increments.
     if (unSorted[im] < q) {
       swap(&unSorted[im], &unSorted[++il]);
     } else {
+      // Decrements ih until a value <= q is found. In an array with lots of
+      // duplicates, where p = q is likely, the decrementation of ih is ensured
+      // upon im hitting a p or q. This means that ih will approach the middle,
+      // preventing complexity degredation.
       while (unSorted[--ih] > q)
         ;
+
+      // Breaks loop if ih has decremented past im.
       if (im >= ih)
         break;
+
+      // Swaps the found value with im.
       swap(&unSorted[ih], &unSorted[im]);
+
+      // If the value was less than p, it is again swapped with an incrementing
+      // il.
       if (unSorted[im] < p) {
         swap(&unSorted[im], &unSorted[++il]);
       }
@@ -103,23 +120,20 @@ void splitDual(int *unSorted, int l, int h, int *lp, int *rp) {
 
 // Geeks4Geeks minimally modified.
 void partition(int *arr, int low, int high, int *lp, int *rp) {
+  // Pivot choice had to be improved to avoid overflow.
   int q1, q3;
   quartile4Sort(arr, low, high, &q1, &q3);
 
   int p = arr[q1], q = arr[q3];
-  // p is the left pivot, and q is the right pivot.
   int j = low + 1;
   int g = high - 1, k = low + 1;
   while (k <= g) {
 
-    // if elements are less than the left pivot
     if (arr[k] < p) {
       swap(&arr[k], &arr[j]);
       j++;
     }
 
-    // if elements are greater than or equal
-    // to the right pivot
     else if (arr[k] >= q) {
       while (arr[g] > q && k < g)
         g--;
@@ -135,14 +149,11 @@ void partition(int *arr, int low, int high, int *lp, int *rp) {
   j--;
   g++;
 
-  // bring pivots to their appropriate positions.
   swap(&arr[low], &arr[j]);
   swap(&arr[high], &arr[g]);
 
-  // returning the indices of the pivots.
-  *lp = j; // because we cannot return two elements
+  *lp = j;
   *rp = g;
-  // from a function.
 }
 
 void monoPivotQS(int *unSorted, int l, int h) {
@@ -156,10 +167,9 @@ void monoPivotQS(int *unSorted, int l, int h) {
 
 void dualPivotQS(int *unSorted, int l, int h) {
   int lp, rp;
-  if (h - l > 3 /* && splitDual(unSorted, l, h, &lp, &rp) */) {
+  if (h - l > 3) {
     splitDual(unSorted, l, h, &lp, &rp);
     dualPivotQS(unSorted, l, lp);
-    // if (lp != rp)
     dualPivotQS(unSorted, lp, rp);
     dualPivotQS(unSorted, rp, h);
   } else
@@ -168,7 +178,6 @@ void dualPivotQS(int *unSorted, int l, int h) {
 
 void geeks4geeksSort(int *arr, int low, int high) {
   if (low < high) {
-    // lp means left pivot, and rp means right pivot.
     int lp, rp;
     partition(arr, low, high, &lp, &rp);
     geeks4geeksSort(arr, low, lp - 1);
