@@ -1,14 +1,11 @@
 #include "linkedNumber.c"
-#include <stdio.h>
+
 int main(int argc, char *argv[]) {
-  char *numberStr = "527380";
-  LinkedNumber number;
-  createLinkedNumber(&number, numberStr);
-  DigitNode digit = *number.tail;
-  printf("\n%d", digit.digit);
-  while (digit.previous != NULL) {
-    digit = *digit.previous;
-    printf("%d", digit.digit);
-  }
-  printf("\n");
+  LinkedNumber number1;
+  createLinkedNumber(&number1, "5720");
+  LinkedNumber number2;
+  createLinkedNumber(&number2, "847");
+  printLinkedNumber(number1);
+  printLinkedNumber(number2);
+  printLinkedNumber(addLinkedNumbers(&number1, &number2));
 }
