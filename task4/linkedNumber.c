@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,10 +43,26 @@ void putLast(LinkedNumber *number, int digit) {
   number->length++;
 }
 
-void createLinkedNumber(LinkedNumber *emptyLinkedNumber, char *number) {
+bool checkValidNumber(char *number) {
+  for (int i = 0; number[i] != '\0'; i++) {
+    if (!isdigit(number[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool createLinkedNumber(LinkedNumber *emptyLinkedNumber, char *number) {
+  emptyLinkedNumber->length = 0;
+  emptyLinkedNumber->head = NULL;
+  emptyLinkedNumber->tail = NULL;
+
+  if (!checkValidNumber(number))
+    return false;
   for (int i = 0; number[i] != '\0'; i++) {
     putFirst(emptyLinkedNumber, (number[i] - '0'));
   }
+  return true;
 }
 
 int biggerOfTwo(int num1, int num2) {

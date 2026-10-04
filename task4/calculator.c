@@ -1,7 +1,9 @@
 #include "linkedNumber.c"
-#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <threads.h>
 #include <time.h>
+#include <unistd.h>
 
 int randomIntInRange(int N) { return rand() % (N + 1); }
 
@@ -19,12 +21,12 @@ bool testAdditon() {
   int reps = 1000;
   for (int i = 0; i < reps; i++) {
     char *number1 = createRandomNumberString();
-    LinkedNumber linkedNumber1 = {0, NULL, NULL};
+    LinkedNumber linkedNumber1;
     createLinkedNumber(&linkedNumber1, number1);
     int number1Int = atoi(number1);
 
     char *number2 = createRandomNumberString();
-    LinkedNumber linkedNumber2 = {0, NULL, NULL};
+    LinkedNumber linkedNumber2;
     createLinkedNumber(&linkedNumber2, number2);
     int number2Int = atoi(number2);
 
@@ -53,4 +55,25 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
   printf("Correct for 9 digits + 9 digits: %s\n",
          testAdditon() ? "true" : "false");
+
+  if (argc < 3) {
+    printf("You need to write the numbers as arguments for the program. For "
+           "example: './calculator 12345 67890' or './calculator 12345 67890 "
+           "987654321'. Only positive numbers work.\n");
+  } else {
+    LinkedNumber sum;
+    createLinkedNumber(&sum, "0");
+    for (int i = 1; i < argc; i++) {
+      LinkedNumber inputNum;
+      if (!createLinkedNumber(&inputNum, argv[i])) {
+        printf("%s is not a valid number.\n", argv[i]);
+        return 1;
+      }
+      sum = addLinkedNumbers(&sum, &inputNum);
+      deepFreeLinkedNumber(&inputNum);
+    }
+    printLinkedNumber(sum);
+    deepFreeLinkedNumber(&sum);
+  }
+  return 0;
 }
