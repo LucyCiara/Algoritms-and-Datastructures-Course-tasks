@@ -13,7 +13,7 @@ struct BinNode {
 };
 
 struct BinNodeTree {
-  BinNode *head;
+  BinNode *root;
   int (*sort)(const void *, const void *);
 };
 
@@ -39,9 +39,24 @@ bool appendValue(BinNodeTree *tree, const void *value) {
   child->motherTree = tree;
   child->left = NULL;
   child->right = NULL;
-  if (tree->head != NULL)
-    addNode(tree->head, child);
+  if (tree->root != NULL)
+    addNode(tree->root, child);
   else
-    tree->head = child;
+    tree->root = child;
   return true;
+}
+
+int max(int a, int b) {
+  if (a >= b)
+    return a;
+  return b;
+}
+
+int findDepth(BinNode *root) {
+  if (!root)
+    return 0;
+  int leftDepth = findDepth(root->left);
+  int rightDepth = findDepth(root->right);
+
+  return max(leftDepth, rightDepth);
 }
