@@ -7,6 +7,7 @@
 
 int randomIntInRange(int N) { return rand() % (N + 1); }
 
+// Creates a random string number of a max length of 9 for use in testing.
 char *createRandomNumberString() {
   int length = randomIntInRange(9);
   char *numberString = (char *)malloc((length + 1) * sizeof(char));
@@ -17,6 +18,8 @@ char *createRandomNumberString() {
   return numberString;
 }
 
+// Tests the accuracy of addition on < 10 length numbmers because accuracy will
+// carry on to longer numbers. It's capped to prevent integer overflow.
 bool testAdditon() {
   int reps = 1000;
   for (int i = 0; i < reps; i++) {
@@ -51,6 +54,8 @@ bool testAdditon() {
   return true;
 }
 
+// The program can be run with any number of arguments where the arguments are
+// whole positive integers to be added together.
 int main(int argc, char *argv[]) {
   srand(time(NULL));
   printf("Correct for 9 digits + 9 digits: %s\n",
