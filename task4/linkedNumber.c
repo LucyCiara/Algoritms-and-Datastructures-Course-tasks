@@ -64,6 +64,10 @@ int smallerOfTwo(int num1, int num2) {
 
 LinkedNumber addLinkedNumbers(LinkedNumber *num1, LinkedNumber *num2) {
   LinkedNumber *sum = (LinkedNumber *)malloc(1 * sizeof(LinkedNumber));
+  sum->length = 0;
+  sum->head = NULL;
+  sum->tail = NULL;
+
   int rest = 0;
   DigitNode *n1 = num1->head;
   DigitNode *n2 = num2->head;
@@ -107,11 +111,25 @@ LinkedNumber addLinkedNumbers(LinkedNumber *num1, LinkedNumber *num2) {
 }
 
 void printLinkedNumber(LinkedNumber number) {
-  DigitNode digit = *number.tail;
-  printf("\n%d", digit.digit);
-  while (digit.previous != NULL) {
-    digit = *digit.previous;
-    printf("%d", digit.digit);
+  if (number.tail != NULL) {
+    DigitNode digit = *number.tail;
+    printf("\n%d", digit.digit);
+    while (digit.previous != NULL) {
+      digit = *digit.previous;
+      printf("%d", digit.digit);
+    }
+    printf("\n");
+  } else {
+    printf("\n0\n");
   }
-  printf("\n");
+}
+
+void deepFreeLinkedNumber(LinkedNumber *number) {
+  DigitNode *nextNode = number->head;
+  DigitNode *previousNode = nextNode;
+  while (nextNode != NULL) {
+    nextNode = nextNode->next;
+    free(previousNode);
+    previousNode = nextNode;
+  }
 }
