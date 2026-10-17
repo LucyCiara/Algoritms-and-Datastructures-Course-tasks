@@ -10,8 +10,7 @@ typedef struct wEdge {
 } WEdge;
 
 typedef struct node {
-  WEdge *edgeDown;
-  WEdge *edgeUp;
+  WEdge *edge;
   void *d;
 } Node;
 
@@ -30,13 +29,12 @@ Graph *newGraph(FILE *f) {
     WEdge *re = (WEdge *)calloc(1, sizeof(WEdge));
     fscanf(f, "%i %i %i\n", &from, &to, &e->capacity);
     e->to = &G->node[to];
-    e->next = G->node[from].edgeDown;
+    e->next = G->node[from].edge;
     re->to = &G->node[from];
     re->capacity = 0;
     re->opposite = e;
     e->opposite = re;
-    G->node[from].edgeDown = e;
-    G->node[from].edgeUp = re;
+    G->node[from].edge = e;
   }
   return G;
 }
