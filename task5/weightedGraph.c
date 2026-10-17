@@ -3,12 +3,15 @@
 
 typedef struct wEdge {
   struct wEdge *next;
+  struct wEdge *opposite;
   struct node *to;
-  int weight;
+  int capacity;
+  int flow;
 } WEdge;
 
 typedef struct node {
-  WEdge *edge;
+  WEdge *edgeDown;
+  WEdge *edgeUp;
   void *d;
 } Node;
 
@@ -24,10 +27,16 @@ Graph *newGraph(FILE *f) {
   for (int i = 0; i < G->E; ++i) {
     int from, to;
     WEdge *e = (WEdge *)malloc(sizeof(WEdge));
-    fscanf(f, "%i %i %i\n", &from, &to, &e->weight);
+    WEdge *re = (WEdge *)calloc(1, sizeof(WEdge));
+    fscanf(f, "%i %i %i\n", &from, &to, &e->capacity);
     e->to = &G->node[to];
-    e->next = G->node[from].edge;
-    G->node[from].edge = e;
+    e->next = G->node[from].edgeDown;
+    re->to = &G->node[from];
+    re->capacity = 0;
+    re->opposite = e;
+    e->opposite = re;
+    G->node[from].edgeDown = e;
+    G->node[from].edgeUp = re;
   }
   return G;
 }
