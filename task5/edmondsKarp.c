@@ -30,15 +30,15 @@ void edmondsKarp(Graph *G, Node *s, Node *t) {
          p = (Parent *)p->parent->d) {
       path = realloc(path, ++n * sizeof(int));
       path[n - 1] = p->parent->num;
-      flow = min(flow, p->edge->capacity);
+      flow = min(flow, p->edge->capacity - p->edge->flow);
     }
     for (Parent *p = (Parent *)t->d; p->parent != NULL;
          p = (Parent *)p->parent->d) {
-      p->edge->flow = flow;
-      p->edge->opposite->flow = -flow;
+      p->edge->flow += flow;
+      p->edge->opposite->flow -= flow;
     }
     printFlowPath(flow, path, n);
     flowTotal += flow;
   }
-  printf("\nTotal flow: %d\n", flowTotal);
+  printf("Total flow: %d\n", flowTotal);
 }
