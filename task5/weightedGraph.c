@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,6 +21,29 @@ typedef struct {
   Node *node;
 } Graph;
 
+void findSinkSource(Graph *G, Node **s, Node **t) {
+  int *in = calloc(G->N, sizeof(int));
+  int *out = calloc(G->N, sizeof(int));
+
+  for (int i = 0; i < G->N; i++) {
+    for (WEdge *e = G->node[i].edge; e; e = e->next) {
+      if (e->capacity > 0) {
+        ++out[i];
+        ++in[e->to->num];
+      }
+    }
+  }
+
+  for (int i = 0; i < G->N; i++) {
+    if (in[i] == 0)
+      *s = &G->node[i];
+    if (out[i] == 0)
+      *t = &G->node[i];
+  }
+  free(in);
+  free(out);
+}
+
 int connectReverse(Node *n, WEdge *e) {
   Node *rn = e->to;
   if (rn->edge) {
@@ -35,7 +59,7 @@ int connectReverse(Node *n, WEdge *e) {
   return 0;
 }
 
-Graph *newGraph(FILE *f) {
+Graph *newGraph(FILE *f, Node **s, Node **t) {
   Graph *G = (Graph *)malloc(sizeof(Graph));
   fscanf(f, "%i %i\n", &G->N, &G->E);
   G->node = (Node *)calloc(G->N, sizeof(Node));
@@ -73,6 +97,8 @@ Graph *newGraph(FILE *f) {
       }
     }
   }
+
+  findSinkSource(G, s, t);
 
   return G;
 }
