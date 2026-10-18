@@ -2,6 +2,8 @@
 #include "weightedGraph.c"
 #include <math.h>
 
+#define UNVISITED -1
+
 // A parent struct which saves the distance in edges of a node, its parent node
 // (node it was found from), and the edge it was found with.
 typedef struct {
@@ -13,7 +15,7 @@ typedef struct {
 // A method for creating a new parent.
 Parent *newParent() {
   Parent *p = calloc(1, sizeof(Parent));
-  p->dist = INFINITY;
+  p->dist = UNVISITED;
   return p;
 }
 
@@ -42,7 +44,7 @@ int bfs(Graph *G, Node *s, Node *t) {
       Parent *p = e->to->d;
       // Checks if the node is already visited or not, and if it still has
       // capacity left.
-      if (p->dist == INFINITY && e->capacity - e->flow > 0) {
+      if (p->dist == UNVISITED && e->capacity - e->flow > 0) {
         p->edge = e;
         // Doubles as both keeping track of distance in edges from start and as
         // keeping track of its visit status.
