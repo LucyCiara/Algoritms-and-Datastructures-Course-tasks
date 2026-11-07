@@ -1,19 +1,6 @@
+#include "linkedList.h"
 #include <stdbool.h>
 #include <stdlib.h>
-
-// The node of a value.
-typedef struct NodeStruct {
-  void *value;
-  struct NodeStruct *previous;
-  struct NodeStruct *next;
-} Node;
-
-// A whole linked list.
-typedef struct {
-  int length;
-  struct NodeStruct *head;
-  struct NodeStruct *tail;
-} LinkedList;
 
 // Internal method to add a new value to the list.
 Node *newNode(char *value, Node *n, Node *p) {
