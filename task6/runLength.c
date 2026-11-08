@@ -32,20 +32,64 @@ size_t encodeRL(char **output, char *inputBytes, size_t inputLength) {
   (*output)[unEncodedIndex] = 0;
 
   char currentByte;
-  for (int i = 0; i < inputLength;) {
+  for (size_t i = 0; i < inputLength;) {
     currentByte = inputBytes[i];
     addUnEncodedToOutput(output, currentByte, &outputLen, &unEncodedIndex);
-    int count = -1;
+    int count = 0;
     while (++i < inputLength && inputBytes[i] == currentByte &&
            ++count != MAX_ENCODED)
       ;
-    if (count > 1)
+    if (count > 0)
       addEncodedToOutput(output, count, &outputLen);
   }
   return outputLen;
 }
 
-// size_t decodeRL(char **output, char number, size_t *length) {
-//   size_t outputLen = 1;
-//   *output = (char *)calloc(outputLen, sizeof(char));
-// }
+void initUnencodingState(UnencodingState *state) {
+  state->previousByte = '\0';
+  state->repetitionCount = 0;
+  state->unEncodedIndex = 0;
+  state->unEncodedCount = 0;
+}
+
+void addToDecodeOutput(char **output, char byte, size_t *length) {
+  *output = realloc(*output, ++*length * sizeof(char));
+  (*output)[*length - 1] = byte;
+}
+
+size_t decodeRL(char **output, char *inputBytes, size_t inputLength,
+                UnencodingState *state) {
+  size_t outputLen = 0;
+  *output = (char *)calloc(1, sizeof(char));
+
+  size_t unEncoded = 0;
+  size_t repetitions = 0;
+
+  if (state->unEncodedCount != 0) {
+    unEncoded = state->unEncodedCount;
+  } else if (state->repetitionCount != 0) {
+    repetitions = state->repetitionCount;
+  }
+
+  for (size_t i = 0; i < inputLength;) {
+    while (unEncoded > 0 && i < inputLength) {
+      addToDecodeOutput(output, inputBytes[i++], &outputLen);
+      --unEncoded;
+    }
+    if (i < inputLength) {
+      if (inputBytes[i] < 0)
+        unEncoded = -inputBytes[i];
+      else
+        repetitions = inputBytes[i];
+
+      while (repetitions > 0) {
+        addToDecodeOutput(output, inputBytes[i - 1], &outputLen);
+        --repetitions;
+      }
+      ++i;
+    }
+  }
+  state->unEncodedCount = unEncoded;
+  state->repetitionCount = repetitions;
+  return outputLen;
+}
