@@ -6,9 +6,9 @@ size_t encodeRL(char **output, char *inputBytes, size_t inputLength);
 
 typedef struct {
   size_t unEncodedIndex;
-  size_t unEncodedCount;
+  int unEncodedCount;
   char previousByte;
-  size_t repetitionCount;
+  int repetitionCount;
 } UnencodingState;
 
 void initUnencodingState(UnencodingState *state);

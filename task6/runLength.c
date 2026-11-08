@@ -39,8 +39,10 @@ size_t encodeRL(char **output, char *inputBytes, size_t inputLength) {
     while (++i < inputLength && inputBytes[i] == currentByte &&
            ++count != MAX_ENCODED)
       ;
-    if (count > 0)
-      addEncodedToOutput(output, count, &outputLen);
+    if (count > 1)
+      addEncodedToOutput(output, count - 1, &outputLen);
+    else if (count == 1)
+      addUnEncodedToOutput(output, currentByte, &outputLen, &unEncodedIndex);
   }
   return outputLen;
 }
@@ -62,8 +64,8 @@ size_t decodeRL(char **output, char *inputBytes, size_t inputLength,
   size_t outputLen = 0;
   *output = (char *)calloc(1, sizeof(char));
 
-  size_t unEncoded = 0;
-  size_t repetitions = 0;
+  int unEncoded = 0;
+  int repetitions = -1;
 
   if (state->unEncodedCount != 0) {
     unEncoded = state->unEncodedCount;
@@ -82,7 +84,7 @@ size_t decodeRL(char **output, char *inputBytes, size_t inputLength,
       else
         repetitions = inputBytes[i];
 
-      while (repetitions > 0) {
+      while (repetitions > -1) {
         addToDecodeOutput(output, inputBytes[i - 1], &outputLen);
         --repetitions;
       }
