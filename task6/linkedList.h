@@ -2,6 +2,7 @@
 #define LINKEDLIST_H_
 
 // The node of a value.
+#include <stddef.h>
 #include <stdlib.h>
 typedef struct NodeStruct {
   void *value;
@@ -11,19 +12,16 @@ typedef struct NodeStruct {
 
 // A whole linked list.
 typedef struct {
-  int length;
+  size_t length;
   struct NodeStruct *head;
   struct NodeStruct *tail;
 } LinkedList;
 
-// Internal method to add a new value to the list.
-Node *newNode(char *value, Node *n, Node *p);
-
 // Implements newNode to add a value to to the front.
-void putFirst(LinkedList *list, char *value);
+void putFirst(LinkedList *list, void *value);
 
 // Implements newNode to add a value to the end.
-void putLast(LinkedList *list, char *value);
+void putLast(LinkedList *list, void *value);
 
 // Sets a LinkedList to an empty list.
 void initLinkedList(LinkedList *list);

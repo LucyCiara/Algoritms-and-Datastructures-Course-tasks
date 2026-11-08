@@ -1,9 +1,10 @@
 #include "linkedList.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 // Internal method to add a new value to the list.
-Node *newNode(char *value, Node *n, Node *p) {
+Node *newNode(void *value, Node *n, Node *p) {
   Node *newValue = (Node *)(malloc(1 * sizeof(Node)));
   newValue->value = value;
   newValue->next = n;
@@ -12,7 +13,7 @@ Node *newNode(char *value, Node *n, Node *p) {
 }
 
 // Implements newNode to add a value to to the front.
-void putFirst(LinkedList *list, char *value) {
+void putFirst(LinkedList *list, void *value) {
   // Adds new list with a given value, and the old head as the next in the
   // link.
   Node *new = newNode(value, list->head, NULL);
@@ -28,7 +29,7 @@ void putFirst(LinkedList *list, char *value) {
 }
 
 // Implements newNode to add a value to the end.
-void putLast(LinkedList *list, char *value) {
+void putLast(LinkedList *list, void *value) {
   // Adds new list with a given value, and the old tail as the previous in the
   // link.
   Node *new = newNode(value, NULL, list->tail);
@@ -56,6 +57,7 @@ void deepFreeLinkedList(LinkedList *list) {
   Node *previousNode = nextNode;
   while (nextNode != NULL) {
     nextNode = nextNode->next;
+    free(previousNode->value);
     free(previousNode);
     previousNode = nextNode;
   }
