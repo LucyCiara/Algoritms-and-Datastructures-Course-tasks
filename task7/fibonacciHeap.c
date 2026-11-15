@@ -3,24 +3,12 @@
 // and:
 // https://www.programiz.com/dsa/fibonacci-heap
 // Both were faulty or unfinished, so improvements had to be made.
+#include "fibonacciHeap.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
 
 #define DEGREE 45
-
-// A node in a fibonacci heap.
-typedef struct fibNode {
-  int key, degree;
-  struct fibNode *parent, *child, *left, *right;
-  int mark;
-} FibNode;
-
-// A fibonacci heap.
-typedef struct {
-  int n;
-  FibNode *min;
-} FibHeap;
 
 // INTERNAL: Creates a node.
 FibNode *createNode(int key) {
