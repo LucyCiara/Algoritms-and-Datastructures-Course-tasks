@@ -1,12 +1,74 @@
+////////////////////////////////////////////////////////////////////////////////
+/// Imports
+////////////////////////////////////////////////////////////////////////////////
+
+#include "fibonacciHeap.h"
+#include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+////////////////////////////////////////////////////////////////////////////////
+/// Weighted Graph Section
+////////////////////////////////////////////////////////////////////////////////
+
+#define INFINITY INT_MAX
+// Creates a graph from a file.
+Graph *newGraph(FILE *f) {
+  // Initiates a new graph and sets its number of nodes and edges to the first 2
+  // numbers of the file.
+  Graph *G = (Graph *)malloc(sizeof(Graph));
+  fscanf(f, "%i %i\n", &G->N, &G->E);
+
+  // Allocates an array of nodes in the graph, and scans information about the
+  // nodes and edges from the file.
+  G->node = (Node *)calloc(G->N, sizeof(Node));
+  for (int i = 0; i < G->E; ++i) {
+    int from, to;
+    WEdge *e = (WEdge *)calloc(1, sizeof(WEdge));
+    fscanf(f, "%i %i %i\n", &from, &to, &e->weight);
+    G->node[from].num = from;
+    G->node[to].num = to;
+    e->to = &G->node[to];
+    e->next = G->node[from].edge;
+    G->node[from].edge = e;
+  }
+
+  return G;
+}
+
+// INTERNAL: Ancestor struct, which allows keeping track of the shortest path to
+// a node.
+typedef struct {
+  int dist;
+  Node *ancestor;
+} Ancestor;
+
+// INTERNAL: Creates an ancestor struct, keeping track of path taken.
+Ancestor *newAncestor() {
+  Ancestor *a = calloc(1, sizeof(Ancestor));
+  a->dist = INFINITY;
+  return a;
+}
+
+// Creates ancestors for the whole graph.
+void initAncestor(Graph *G, Node *s) {
+  for (int i = G->N; i--;) {
+    G->node[i].d = newAncestor();
+  }
+  ((Ancestor *)s->d)->dist = 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+/// Fibonacci Heap Section
+///////////////////////////////////////////////////////////////////////////////
+
 // Based on:
 // https://www.tutorialspoint.com/data_structures_algorithms/fibonacci_heap.htm
 // and:
 // https://www.programiz.com/dsa/fibonacci-heap
 // Both were faulty or unfinished, so improvements had to be made.
-#include "fibonacciHeap.h"
-#include <assert.h>
-#include <limits.h>
-#include <stdlib.h>
 
 #define DEGREE 45
 
@@ -22,8 +84,11 @@ FibNode *createNode(int key) {
 FibHeap *createHeap() { return (FibHeap *)calloc(1, sizeof(FibHeap)); }
 
 // Inserts a key into a heap, creating a node for it.
-FibNode *insert(FibHeap *H, int key) {
-  FibNode *n = createNode(key);
+FibNode *addToQueue(FibHeap *H, Node *vertex) {
+  Ancestor *nm = vertex->d;
+  FibNode *n = createNode(nm->dist);
+  vertex->queueNode = n;
+  n->vertex = vertex;
   if (!H->min)
     H->min = n;
   else {
@@ -111,7 +176,7 @@ void consolidate(FibHeap *H) {
 }
 
 // Pops H's min, the smallest keyvalue.
-FibNode *popMin(FibHeap *H) {
+Node *popMin(FibHeap *H) {
   FibNode *z = H->min;
   // Checks if z is non-NULL. If it's not, the NULL value will be returned
   // immediately after failing the condition.
@@ -142,9 +207,14 @@ FibNode *popMin(FibHeap *H) {
       H->min = z->right;
       consolidate(H);
     }
+
     --(H->n);
+    Node *output = z->vertex;
+    z->vertex = NULL;
+    free(z);
+    return output;
   }
-  return z;
+  return NULL;
 }
 
 // INTERNAL: Takes a node y and a direct subnode x of y, and moves it to the top
@@ -207,8 +277,24 @@ void decreaseKey(FibHeap *H, FibNode *x, int newKey) {
   }
 }
 
-void deleteNode(FibHeap *H, FibNode *x) {
-  assert(H->min->key >= 0);
-  decreaseKey(H, x, -1);
-  free(popMin(H));
+// void deleteNode(FibHeap *H, FibNode *x) {
+//   assert(H->min->key >= 0);
+//   decreaseKey(H, x, -1);
+//   free(popMin(H));
+// }
+
+////////////////////////////////////////////////////////////////////////////////
+/// Both
+////////////////////////////////////////////////////////////////////////////////
+
+void shorten(FibHeap *H, Node *n, WEdge *e) {
+  Ancestor *nd = n->d, *md = e->to->d;
+  if (md->dist > nd->dist + e->weight) {
+    md->dist = nd->dist + e->weight;
+    md->ancestor = n;
+    if (e->to->queueNode == NULL)
+      addToQueue(H, e->to);
+    else
+      decreaseKey(H, e->to->queueNode, md->dist);
+  }
 }
