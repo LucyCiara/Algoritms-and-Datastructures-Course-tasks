@@ -13,21 +13,22 @@
 /// Weighted Graph Section
 ////////////////////////////////////////////////////////////////////////////////
 
-#define INFINITY INT_MAX
+#define INFINITY LLONG_MAX
 // Creates a graph from a file.
 Graph *newGraph(FILE *f) {
   // Initiates a new graph and sets its number of nodes and edges to the first 2
   // numbers of the file.
   Graph *G = (Graph *)malloc(sizeof(Graph));
-  fscanf(f, "%i %i\n", &G->N, &G->E);
+  fscanf(f, "%zu", &G->N);
 
   // Allocates an array of nodes in the graph, and scans information about the
   // nodes and edges from the file.
   G->node = (Node *)calloc(G->N, sizeof(Node));
-  for (int i = 0; i < G->E; ++i) {
-    int from, to;
+  int from, to;
+  long long weight;
+  while (fscanf(f, "%i %i %lld %*i %*i\n", &from, &to, &weight) != EOF) {
     WEdge *e = (WEdge *)calloc(1, sizeof(WEdge));
-    fscanf(f, "%i %i %i\n", &from, &to, &e->weight);
+    e->weight = weight;
     G->node[from].num = from;
     G->node[to].num = to;
     e->to = &G->node[to];
@@ -37,13 +38,6 @@ Graph *newGraph(FILE *f) {
 
   return G;
 }
-
-// INTERNAL: Ancestor struct, which allows keeping track of the shortest path to
-// a node.
-typedef struct {
-  int dist;
-  Node *ancestor;
-} Ancestor;
 
 // INTERNAL: Creates an ancestor struct, keeping track of path taken.
 Ancestor *newAncestor() {
@@ -210,7 +204,7 @@ Node *popMin(FibHeap *H) {
 
     --(H->n);
     Node *output = z->vertex;
-    z->vertex = NULL;
+    output->queueNode = NULL;
     free(z);
     return output;
   }

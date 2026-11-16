@@ -3,6 +3,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 /// Imports
 ///////////////////////////////////////////////////////////////////////////////
+#include <stddef.h>
 #include <stdio.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -16,8 +17,8 @@ typedef struct wEdge {
   struct wEdge *next;
   struct wEdge *opposite;
   struct node *to;
-  int weight;
-  int heuristic;
+  long long weight;
+  long long heuristic;
 } WEdge;
 
 // A node struct which keeps track of its outgoing edge (with recursive info
@@ -33,9 +34,16 @@ typedef struct node {
 // A graph struct containing info about its number of nodes and edges, and an
 // array of its nodes.
 typedef struct {
-  int N, E;
+  size_t N;
   Node *node;
 } Graph;
+
+// Ancestor struct, which allows keeping track of the shortest path to
+// a node.
+typedef struct {
+  long long dist;
+  Node *ancestor;
+} Ancestor;
 
 Graph *newGraph(FILE *f);
 
@@ -47,7 +55,7 @@ void initAncestor(Graph *G, Node *s);
 
 // A node in a fibonacci heap.
 typedef struct fibNode {
-  int key, degree;
+  size_t key, degree;
   struct fibNode *parent, *child, *left, *right;
   int mark;
   Node *vertex;
@@ -55,7 +63,7 @@ typedef struct fibNode {
 
 // A fibonacci heap.
 typedef struct {
-  int n;
+  size_t n;
   FibNode *min;
 } FibHeap;
 
