@@ -29,12 +29,13 @@ typedef struct node {
   int num;
   void *d;
   struct fibNode *queueNode;
+  double latitude, longitude;
 } Node;
 
 // A graph struct containing info about its number of nodes and edges, and an
 // array of its nodes.
 typedef struct {
-  size_t N;
+  size_t N, E;
   Node *node;
 } Graph;
 
@@ -45,7 +46,7 @@ typedef struct {
   Node *ancestor;
 } Ancestor;
 
-Graph *newGraph(FILE *f);
+Graph *newGraph(FILE *edgeF, FILE *nodeF);
 
 void initAncestor(Graph *G, Node *s);
 
@@ -76,6 +77,8 @@ Node *popMin(FibHeap *H);
 void decreaseKey(FibHeap *H, FibNode *x, int newKey);
 
 void deleteNode(FibHeap *H, FibNode *x);
+
+void emptyQueue(FibHeap *H);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Both

@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -14,19 +15,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define INFINITY LLONG_MAX
+
 // Creates a graph from a file.
-Graph *newGraph(FILE *f) {
+Graph *newGraph(FILE *edgeF, FILE *nodeF) {
   // Initiates a new graph and sets its number of nodes and edges to the first 2
   // numbers of the file.
   Graph *G = (Graph *)malloc(sizeof(Graph));
-  fscanf(f, "%zu", &G->N);
+  fscanf(edgeF, "%zu", &G->E);
+  fscanf(nodeF, "%zu", &G->N);
 
   // Allocates an array of nodes in the graph, and scans information about the
   // nodes and edges from the file.
   G->node = (Node *)calloc(G->N, sizeof(Node));
   int from, to;
   long long weight;
-  while (fscanf(f, "%i %i %lld %*i %*i\n", &from, &to, &weight) != EOF) {
+  while (fscanf(edgeF, "%i %i %lld %*i %*i\n", &from, &to, &weight) != EOF) {
     WEdge *e = (WEdge *)calloc(1, sizeof(WEdge));
     e->weight = weight;
     G->node[from].num = from;
@@ -34,6 +37,14 @@ Graph *newGraph(FILE *f) {
     e->to = &G->node[to];
     e->next = G->node[from].edge;
     G->node[from].edge = e;
+  }
+
+  for (int i = 0; i < G->N; ++i) {
+    size_t nodeIndex;
+    double latitude, longitude;
+    fscanf(nodeF, "%zu %lf %lf", &nodeIndex, &latitude, &longitude);
+    G->node[nodeIndex].latitude = latitude;
+    G->node[nodeIndex].longitude = longitude;
   }
 
   return G;
@@ -271,11 +282,10 @@ void decreaseKey(FibHeap *H, FibNode *x, int newKey) {
   }
 }
 
-// void deleteNode(FibHeap *H, FibNode *x) {
-//   assert(H->min->key >= 0);
-//   decreaseKey(H, x, -1);
-//   free(popMin(H));
-// }
+void emptyQueue(FibHeap *H) {
+  while (H->n > 0)
+    popMin(H);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Both
