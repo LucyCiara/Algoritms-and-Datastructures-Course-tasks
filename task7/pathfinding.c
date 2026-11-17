@@ -27,8 +27,7 @@ void dijkstraLogging(FILE *outF, Graph *G, Node *s, Node *t) {
       return;
     }
     for (WEdge *e = (WEdge *)n->edge; e; e = e->next) {
-      fprintf(outF, "%i %lf %lf\n", n->num, n->latitude, n->longitude);
-      shorten(q, n, e);
+      shortenLogging(outF, q, n, e);
     }
   }
 }

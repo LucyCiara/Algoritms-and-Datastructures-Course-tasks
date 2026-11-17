@@ -86,4 +86,6 @@ void emptyQueue(FibHeap *H);
 
 void shorten(FibHeap *H, Node *n, WEdge *e);
 
+void shortenLogging(FILE *outF, FibHeap *H, Node *n, WEdge *e);
+
 #endif

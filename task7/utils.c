@@ -302,3 +302,18 @@ void shorten(FibHeap *H, Node *n, WEdge *e) {
       decreaseKey(H, e->to->queueNode, md->dist);
   }
 }
+
+void shortenLogging(FILE *outF, FibHeap *H, Node *n, WEdge *e) {
+  Ancestor *nd = n->d, *md = e->to->d;
+  if (md->dist == INFINITY) {
+    fprintf(outF, "%lf,%lf\n", e->to->latitude, e->to->longitude);
+  }
+  if (md->dist > nd->dist + e->weight) {
+    md->dist = nd->dist + e->weight;
+    md->ancestor = n;
+    if (e->to->queueNode == NULL)
+      addToQueue(H, e->to);
+    else
+      decreaseKey(H, e->to->queueNode, md->dist);
+  }
+}

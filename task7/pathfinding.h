@@ -3,5 +3,6 @@
 #include "utils.h"
 
 void dijkstra(Graph *G, Node *s, Node *t);
+void dijkstraLogging(FILE *outF, Graph *G, Node *s, Node *t);
 
 #endif
