@@ -11,6 +11,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define EXAMPLES 12
+#define NODE_FILE "noder.txt"
+#define EDGE_FILE "kanter.txt"
 
 double centiSecondsToSeconds(long long cs) { return ((double)cs) / 100; }
 
@@ -80,6 +82,7 @@ void testDijkstraCorrect(Graph *G) {
     assert(hours == hourResult[i]);
     assert(minutes == minuteResult[i]);
     assert((int)seconds == secondResult[i]);
+    freeAncestors(G);
   }
 }
 
@@ -127,6 +130,7 @@ void dijkstraWriteCoords(Graph *G) {
   Node *s = &G->node[starts[0]], *t = &G->node[ends[0]];
   dijkstraLogging(outF, G, s, t);
   fclose(outF);
+  freeAncestors(G);
 
   // Count number of lines in pathfinding file.
   FILE *inF = fopen(outFName, "r");
@@ -148,13 +152,30 @@ void dijkstraWriteCoords(Graph *G) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// ALT algorithm implementation
+////////////////////////////////////////////////////////////////////////////////
+
+void preProcess(Graph *G) {
+  size_t l1, l2, l3, l4;
+  getLandMarks(G, &l1, &l2, &l3, &l4);
+  size_t landmarks[] = {l1, l2, l3, l4};
+  char *fileNames[] = {"l1.txt", "l2.txt", "l3.txt", "l4.txt"};
+  for (int i = 0; i < 4; ++i) {
+    FILE *outF = fopen(fileNames[i], "w+");
+    writeLandmarkMap(outF, G, landmarks[i]);
+    fclose(outF);
+    freeAncestors(G);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 /// Main method
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[]) {
   // Create graph from file with edge info.
-  FILE *edgeF = fopen("kanter.txt", "r");
-  FILE *nodeF = fopen("noder.txt", "r");
+  FILE *edgeF = fopen(EDGE_FILE, "r");
+  FILE *nodeF = fopen(NODE_FILE, "r");
   Graph *G = newGraph(edgeF, nodeF);
   fclose(edgeF);
   fclose(nodeF);
@@ -162,9 +183,9 @@ int main(int argc, char *argv[]) {
   // // Opens a file for writing visitations of the algorithm.
   // FILE *coordOutF = fopen("visitation.txt", "w+");
 
-  // Tests dijkstra for
   // testDijkstraCorrect(G);
-  dijkstraWriteCoords(G);
+  // dijkstraWriteCoords(G);
+  preProcess(G);
 
   return 0;
 }

@@ -65,6 +65,15 @@ void initAncestor(Graph *G, Node *s) {
   ((Ancestor *)s->d)->dist = 0;
 }
 
+void freeAncestors(Graph *G) {
+  for (size_t i = 0; i < G->N; ++i) {
+    if (G->node[i].d != NULL) {
+      free(((Ancestor *)G->node[i].d));
+      G->node[i].d = NULL;
+    }
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////////
 /// Fibonacci Heap Section
 ///////////////////////////////////////////////////////////////////////////////
