@@ -4,15 +4,35 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Handling test data
+/// Handling data
 ////////////////////////////////////////////////////////////////////////////////
-
 #define EXAMPLES 12
 #define NODE_FILE "noder.txt"
 #define EDGE_FILE "kanter.txt"
+
+Graph *createGraph() {
+  // Create graph from file with edge info.
+  FILE *edgeF = fopen(EDGE_FILE, "r");
+  FILE *nodeF = fopen(NODE_FILE, "r");
+  Graph *G = newGraph(edgeF, nodeF);
+  fclose(edgeF);
+  fclose(nodeF);
+  return G;
+}
+
+Graph *createReverseGraph() {
+  // Create graph from file with edge info.
+  FILE *edgeF = fopen(EDGE_FILE, "r");
+  FILE *nodeF = fopen(NODE_FILE, "r");
+  Graph *R = newReverseGraph(edgeF, nodeF);
+  fclose(edgeF);
+  fclose(nodeF);
+  return R;
+}
 
 double centiSecondsToSeconds(long long cs) { return ((double)cs) / 100; }
 
@@ -60,15 +80,74 @@ void defineTestData(int *starts, int *ends, int *nodeCountResult,
 /// Testing Dijkstra's correctness using test data
 ////////////////////////////////////////////////////////////////////////////////
 
-void testDijkstraCorrect(Graph *G) {
+////////////////////////////////////////////////////////////////////////////////
+/// ALT pre-processing
+////////////////////////////////////////////////////////////////////////////////
+
+#define LANDMARK_FILENAMES (char *[4]){"l1.txt", "l2.txt", "l3.txt", "l4.txt"}
+#define LN 4
+
+void preprocess() {
+  Graph *G = createGraph();
+  Graph *R = createReverseGraph();
+
+  size_t l1, l2, l3, l4;
+  getLandMarks(G, &l1, &l2, &l3, &l4);
+  size_t landmarks[] = {l1, l2, l3, l4};
+  for (int i = 0; i < LN; ++i) {
+    FILE *outF = fopen(LANDMARK_FILENAMES[i], "w+");
+    writeLandmarkMap(outF, G, R, landmarks[i]);
+    fclose(outF);
+    freeAncestors(G);
+  }
+
+  free(G);
+}
+
+LandmarkInfo **readPreprocess(Graph *G, size_t landmarks[LN]) {
+  LandmarkInfo **landmarkInfos = malloc(LN * sizeof *landmarkInfos);
+  for (int i = 0; i < LN; ++i) {
+    FILE *inF = fopen(LANDMARK_FILENAMES[i], "r");
+    LandmarkInfo *landmarkInfo = readLandmarkMap(inF, G, &landmarks[i]);
+    landmarkInfos[i] = landmarkInfo;
+    fclose(inF);
+  }
+  return landmarkInfos;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Testing algorithms' correctness using test data
+////////////////////////////////////////////////////////////////////////////////
+
+void testDijkstraCorrect(Graph *G, Node *s, Node *t,
+                         LandmarkInfo **landmarkInfos) {
+  dijkstra(G, s, t);
+}
+
+void testALTCorrect(Graph *G, Node *s, Node *t, LandmarkInfo **landmarkInfos) {
+  ALT(G, s, t, LN, landmarkInfos);
+}
+
+void testAlgorithmCorrect(void (*f)(Graph *, Node *, Node *, LandmarkInfo **)) {
+  Graph *G = createGraph();
+
+  // Define test data.
   int starts[EXAMPLES], ends[EXAMPLES], nodeCountResult[EXAMPLES],
       hourResult[EXAMPLES], minuteResult[EXAMPLES], secondResult[EXAMPLES];
   defineTestData(starts, ends, nodeCountResult, hourResult, minuteResult,
                  secondResult);
 
-  for (int i = 0; i < EXAMPLES - 1; ++i) {
+  // Get preprocessing data from file.
+  size_t landmarks[LN];
+  LandmarkInfo **landmarkInfos = readPreprocess(G, landmarks);
+
+  // Test ALT algorithm for every example dataset.
+  for (int i = 0; i < EXAMPLES; ++i) {
+    // Run algorithm
     Node *s = &G->node[starts[i]], *t = &G->node[ends[i]];
-    dijkstra(G, s, t);
+    f(G, s, t, landmarkInfos);
+
+    // Get path infos and print them.
     long long dist = ((Ancestor *)t->d)->dist;
     double seconds = centiSecondsToSeconds(dist);
     int minutes = extractMinutes(&seconds);
@@ -78,6 +157,8 @@ void testDijkstraCorrect(Graph *G) {
       ++count;
     printf("%i  %i  %i %lli  %i:%i:%.2f\n", starts[i], ends[i], count, dist,
            hours, minutes, seconds);
+
+    // Assert info with answers and free ancestors.
     assert(count == nodeCountResult[i]);
     assert(hours == hourResult[i]);
     assert(minutes == minuteResult[i]);
@@ -91,7 +172,8 @@ void testDijkstraCorrect(Graph *G) {
 ////////////////////////////////////////////////////////////////////////////////
 
 #define COORD_ENTRY_LIMIT 1000
-#define COORD_FILE_NAME "coordinates"
+#define COORD_FILE_NAME "Coordinates"
+#define COORD_FILE_TYPE ".csv"
 
 size_t countLines(FILE *f) {
   size_t i;
@@ -114,58 +196,82 @@ void trimFile(FILE *inF, FILE *outF, size_t lineCount) {
   }
 }
 
-void dijkstraWriteCoords(Graph *G) {
-  char outFName[] = "coordinates.csv";
-  char outFTrimmedName[] = "coordinatesTrimmed.csv";
-  char outFStartAndStop[] = "startStop.csv";
-
-  // Define test data
-  int starts[EXAMPLES], ends[EXAMPLES], nodeCountResult[EXAMPLES],
-      hourResult[EXAMPLES], minuteResult[EXAMPLES], secondResult[EXAMPLES];
-  defineTestData(starts, ends, nodeCountResult, hourResult, minuteResult,
-                 secondResult);
-
+void executeDijkstraWrite(Graph *G, Node *s, Node *t, char outFName[],
+                          LandmarkInfo **landmarkInfos) {
   // Write pathfinding to file.
   FILE *outF = fopen(outFName, "w+");
-  Node *s = &G->node[starts[0]], *t = &G->node[ends[0]];
   dijkstraLogging(outF, G, s, t);
   fclose(outF);
-  freeAncestors(G);
-
-  // Count number of lines in pathfinding file.
-  FILE *inF = fopen(outFName, "r");
-  size_t lines = countLines(inF);
-  fclose(inF);
-
-  // Trim pathfinding file.
-  inF = fopen(outFName, "r");
-  FILE *trimmedF = fopen(outFTrimmedName, "w+");
-  trimFile(inF, trimmedF, lines);
-  fclose(trimmedF);
-  fclose(inF);
-
-  // Write start and stop coordinates to a file.
-  FILE *startStopF = fopen(outFStartAndStop, "w+");
-  fprintf(startStopF, "%lf,%lf\n", s->latitude, s->longitude);
-  fprintf(startStopF, "%lf,%lf\n", t->latitude, t->longitude);
-  fclose(startStopF);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// ALT algorithm implementation
-////////////////////////////////////////////////////////////////////////////////
+void executeALTWrite(Graph *G, Node *s, Node *t, char outFName[],
+                     LandmarkInfo **landmarkInfos) {
+  // Write pathfinding to file.
+  FILE *outF = fopen(outFName, "w+");
+  ALTLogging(outF, G, s, t, LN, landmarkInfos);
+  fclose(outF);
+}
 
-void preProcess(Graph *G) {
-  size_t l1, l2, l3, l4;
-  getLandMarks(G, &l1, &l2, &l3, &l4);
-  size_t landmarks[] = {l1, l2, l3, l4};
-  char *fileNames[] = {"l1.txt", "l2.txt", "l3.txt", "l4.txt"};
-  for (int i = 0; i < 4; ++i) {
-    FILE *outF = fopen(fileNames[i], "w+");
-    writeLandmarkMap(outF, G, landmarks[i]);
-    fclose(outF);
+void writeAlgorithmCoords(void (*f)(Graph *, Node *, Node *, char[],
+                                    LandmarkInfo **),
+                          char algorithmName[]) {
+  Graph *G = createGraph();
+
+  // Get preprocessing data from file.
+  size_t landmarks[LN];
+  LandmarkInfo **landmarkInfos = readPreprocess(G, landmarks);
+
+  printf("%s\n", algorithmName);
+
+  for (size_t i = 0; i < EXAMPLES; ++i) {
+    size_t outFNameLen = strlen(algorithmName) + strlen(COORD_FILE_NAME) +
+                         strlen(COORD_FILE_TYPE) + 1 + (i / 10) + 1;
+    char outFName[outFNameLen];
+    snprintf(outFName, outFNameLen, "%s%s%zu%s", algorithmName, COORD_FILE_NAME,
+             i, COORD_FILE_TYPE);
+
+    size_t outFTrimmedNameLen = outFNameLen + strlen("Trimmed");
+    char outFTrimmedName[outFTrimmedNameLen];
+    snprintf(outFTrimmedName, outFTrimmedNameLen, "%s%s%s%zu%s", algorithmName,
+             "Trimmed", COORD_FILE_NAME, i, COORD_FILE_TYPE);
+
+    size_t outFStartAndStopLen = strlen(algorithmName) + strlen("StartStop") +
+                                 strlen(COORD_FILE_TYPE) + 1 + (i / 10) + 1;
+    char outFStartAndStop[outFStartAndStopLen];
+    snprintf(outFStartAndStop, outFStartAndStopLen, "%s%s%zu%s", algorithmName,
+             "StartStop", i, COORD_FILE_TYPE);
+
+    // Define test data
+    int starts[EXAMPLES], ends[EXAMPLES], nodeCountResult[EXAMPLES],
+        hourResult[EXAMPLES], minuteResult[EXAMPLES], secondResult[EXAMPLES];
+    defineTestData(starts, ends, nodeCountResult, hourResult, minuteResult,
+                   secondResult);
+
+    // Run coordinateWriting algorithm.
+    Node *s = &G->node[starts[i]], *t = &G->node[ends[i]];
+    f(G, s, t, outFName, landmarkInfos);
     freeAncestors(G);
+
+    // Count number of lines in pathfinding file.
+    FILE *inF = fopen(outFName, "r");
+    size_t lines = countLines(inF);
+    fclose(inF);
+    printf("Number of nodes explored: %zu\n", lines);
+
+    // Trim pathfinding file.
+    inF = fopen(outFName, "r");
+    FILE *trimmedF = fopen(outFTrimmedName, "w+");
+    trimFile(inF, trimmedF, lines);
+    fclose(trimmedF);
+    fclose(inF);
+
+    // Write start and stop coordinates to a file.
+    FILE *startStopF = fopen(outFStartAndStop, "w+");
+    fprintf(startStopF, "%lf,%lf\n", s->latitude, s->longitude);
+    fprintf(startStopF, "%lf,%lf\n", t->latitude, t->longitude);
+    fclose(startStopF);
   }
+  freeLandmarkInfos(landmarkInfos, G, LN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -173,19 +279,13 @@ void preProcess(Graph *G) {
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[]) {
-  // Create graph from file with edge info.
-  FILE *edgeF = fopen(EDGE_FILE, "r");
-  FILE *nodeF = fopen(NODE_FILE, "r");
-  Graph *G = newGraph(edgeF, nodeF);
-  fclose(edgeF);
-  fclose(nodeF);
-
   // // Opens a file for writing visitations of the algorithm.
   // FILE *coordOutF = fopen("visitation.txt", "w+");
 
-  // testDijkstraCorrect(G);
-  // dijkstraWriteCoords(G);
-  preProcess(G);
-
+  // testAlgorithmCorrect(testALTCorrect);
+  // preprocess();
+  writeAlgorithmCoords(executeDijkstraWrite, "dijkstra");
+  writeAlgorithmCoords(executeALTWrite, "ALT");
+  //
   return 0;
 }

@@ -18,7 +18,6 @@ typedef struct wEdge {
   struct wEdge *opposite;
   struct node *to;
   long long weight;
-  long long heuristic;
 } WEdge;
 
 // A node struct which keeps track of its outgoing edge (with recursive info
@@ -42,11 +41,12 @@ typedef struct {
 // Ancestor struct, which allows keeping track of the shortest path to
 // a node.
 typedef struct {
-  long long dist;
+  long long dist, heuristic;
   Node *ancestor;
 } Ancestor;
 
 Graph *newGraph(FILE *edgeF, FILE *nodeF);
+Graph *newReverseGraph(FILE *edgeF, FILE *nodeF);
 
 void initAncestor(Graph *G, Node *s);
 
@@ -86,8 +86,13 @@ void emptyQueue(FibHeap *H);
 /// Both
 ////////////////////////////////////////////////////////////////////////////////
 
-void shorten(FibHeap *H, Node *n, WEdge *e);
+typedef struct {
+  long long *from;
+  long long *to;
+} LandmarkInfo;
 
-void shortenLogging(FILE *outF, FibHeap *H, Node *n, WEdge *e);
+void freeLandmarkInfos(LandmarkInfo **landmarkInfos, Graph *G, int LN);
+
+void shorten(FibHeap *H, Node *n, WEdge *e);
 
 #endif

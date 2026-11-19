@@ -13,7 +13,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// Weighted Graph Section
 ////////////////////////////////////////////////////////////////////////////////
-
 #define INFINITY LLONG_MAX
 
 // Creates a graph from a file.
@@ -30,6 +29,40 @@ Graph *newGraph(FILE *edgeF, FILE *nodeF) {
   int from, to;
   long long weight;
   while (fscanf(edgeF, "%i %i %lld %*i %*i\n", &from, &to, &weight) != EOF) {
+    WEdge *e = (WEdge *)calloc(1, sizeof(WEdge));
+    e->weight = weight;
+    G->node[from].num = from;
+    G->node[to].num = to;
+    e->to = &G->node[to];
+    e->next = G->node[from].edge;
+    G->node[from].edge = e;
+  }
+
+  for (int i = 0; i < G->N; ++i) {
+    size_t nodeIndex;
+    double latitude, longitude;
+    fscanf(nodeF, "%zu %lf %lf", &nodeIndex, &latitude, &longitude);
+    G->node[nodeIndex].latitude = latitude;
+    G->node[nodeIndex].longitude = longitude;
+  }
+
+  return G;
+}
+
+// Creates a graph from a file.
+Graph *newReverseGraph(FILE *edgeF, FILE *nodeF) {
+  // Initiates a new graph and sets its number of nodes and edges to the first 2
+  // numbers of the file.
+  Graph *G = (Graph *)malloc(sizeof(Graph));
+  fscanf(edgeF, "%zu", &G->E);
+  fscanf(nodeF, "%zu", &G->N);
+
+  // Allocates an array of nodes in the graph, and scans information about the
+  // nodes and edges from the file.
+  G->node = (Node *)calloc(G->N, sizeof(Node));
+  int from, to;
+  long long weight;
+  while (fscanf(edgeF, "%i %i %lld %*i %*i\n", &to, &from, &weight) != EOF) {
     WEdge *e = (WEdge *)calloc(1, sizeof(WEdge));
     e->weight = weight;
     G->node[from].num = from;
@@ -100,7 +133,7 @@ FibHeap *createHeap() { return (FibHeap *)calloc(1, sizeof(FibHeap)); }
 // Inserts a key into a heap, creating a node for it.
 FibNode *addToQueue(FibHeap *H, Node *vertex) {
   Ancestor *nm = vertex->d;
-  FibNode *n = createNode(nm->dist);
+  FibNode *n = createNode(nm->dist + nm->heuristic);
   vertex->queueNode = n;
   n->vertex = vertex;
   if (!H->min)
@@ -269,8 +302,9 @@ void cascadingCut(FibHeap *H, FibNode *y) {
   }
 }
 
-// Gives a new key value to a node if it's less than or equal to the existing
-// key value, calling cut and cascadingCut to bring the new, lower value up.
+// INTERNAL: Gives a new key value to a node if it's less than or equal to the
+// existing key value, calling cut and cascadingCut to bring the new, lower
+// value up.
 void decreaseKey(FibHeap *H, FibNode *x, int newKey) {
   if (newKey > x->key) {
     return;
@@ -300,6 +334,15 @@ void emptyQueue(FibHeap *H) {
 /// Both
 ////////////////////////////////////////////////////////////////////////////////
 
+void freeLandmarkInfos(LandmarkInfo **landmarkInfos, Graph *G, int LN) {
+  for (int i = 0; i < LN; ++i) {
+    free(landmarkInfos[i]->from);
+    free(landmarkInfos[i]->to);
+    free(landmarkInfos[i]);
+  }
+  free(landmarkInfos);
+}
+
 void shorten(FibHeap *H, Node *n, WEdge *e) {
   Ancestor *nd = n->d, *md = e->to->d;
   if (md->dist > nd->dist + e->weight) {
@@ -308,21 +351,6 @@ void shorten(FibHeap *H, Node *n, WEdge *e) {
     if (e->to->queueNode == NULL)
       addToQueue(H, e->to);
     else
-      decreaseKey(H, e->to->queueNode, md->dist);
-  }
-}
-
-void shortenLogging(FILE *outF, FibHeap *H, Node *n, WEdge *e) {
-  Ancestor *nd = n->d, *md = e->to->d;
-  if (md->dist == INFINITY) {
-    fprintf(outF, "%lf,%lf\n", e->to->latitude, e->to->longitude);
-  }
-  if (md->dist > nd->dist + e->weight) {
-    md->dist = nd->dist + e->weight;
-    md->ancestor = n;
-    if (e->to->queueNode == NULL)
-      addToQueue(H, e->to);
-    else
-      decreaseKey(H, e->to->queueNode, md->dist);
+      decreaseKey(H, e->to->queueNode, md->dist + md->heuristic);
   }
 }
