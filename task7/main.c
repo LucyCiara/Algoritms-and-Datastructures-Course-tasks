@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,14 +15,17 @@
 #define EXAMPLES 12
 #define NODE_FILE "noder.txt"
 #define EDGE_FILE "kanter.txt"
+#define POINTS_OF_INTEREST_FILE "interessepkt.txt"
 
 Graph *createGraph() {
   // Create graph from file with edge info.
   FILE *edgeF = fopen(EDGE_FILE, "r");
   FILE *nodeF = fopen(NODE_FILE, "r");
-  Graph *G = newGraph(edgeF, nodeF);
+  FILE *interestF = fopen(POINTS_OF_INTEREST_FILE, "r");
+  Graph *G = newGraph(edgeF, nodeF, interestF);
   fclose(edgeF);
   fclose(nodeF);
+  fclose(interestF);
   return G;
 }
 
@@ -366,6 +370,8 @@ void writeAlgorithmCoordInput(void (*f)(Graph *, Node *, Node *, char[],
 /// Main method
 ////////////////////////////////////////////////////////////////////////////////
 
+#define POINTS_OF_INTEREST_FILE "interessepkt.txt"
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     printf("Run program in the format of './main -flag'\n");
@@ -385,8 +391,8 @@ int main(int argc, char *argv[]) {
               strcmp(argv[1], "-c") == 0 ||
               strcmp(argv[1], "--coordinates") == 0) &&
              argc >= 3) {
-    int start = atoi(argv[2]);
-    int end = atoi(argv[3]);
+    size_t start = strtoul(argv[2], NULL, 10);
+    size_t end = strtoul(argv[3], NULL, 10);
     if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "--dijkstra") == 0) {
       if (argc == 4) {
         testAlgorithmInput(testDijkstraCorrect, "Dijkstra", start, end);
@@ -401,6 +407,19 @@ int main(int argc, char *argv[]) {
                                strcmp(argv[4], "--coordinates") == 0)) {
         writeAlgorithmCoordInput(executeALTWrite, "ALT", start, end);
       }
+    }
+  } else if ((strcmp(argv[1], "-i") == 0 ||
+              strcmp(argv[1], "--interessepunkter") == 0) &&
+             argc == 4) {
+    size_t start = strtoul(argv[2], NULL, 10);
+    uint8_t code = strtoul(argv[3], NULL, 10);
+    Graph *G = createGraph();
+    size_t N = 4;
+    size_t *pointsOfInterest =
+        dijkstraPointsOfInterest(G, &G->node[start], N, code);
+    printf("The closest points of interest are:\n");
+    for (size_t i = 0; i < N; ++i) {
+      printf("%zu\n", pointsOfInterest[i]);
     }
   }
   return 0;

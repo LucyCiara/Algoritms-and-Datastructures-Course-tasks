@@ -4,9 +4,11 @@
 
 #include "utils.h"
 #include <assert.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,7 +18,7 @@
 #define INFINITY LLONG_MAX
 
 // Creates a graph from a file.
-Graph *newGraph(FILE *edgeF, FILE *nodeF) {
+Graph *newGraph(FILE *edgeF, FILE *nodeF, FILE *interestF) {
   // Initiates a new graph and sets its number of nodes and edges to the first 2
   // numbers of the file.
   Graph *G = (Graph *)malloc(sizeof(Graph));
@@ -38,12 +40,21 @@ Graph *newGraph(FILE *edgeF, FILE *nodeF) {
     G->node[from].edge = e;
   }
 
-  for (int i = 0; i < G->N; ++i) {
+  for (size_t i = 0; i < G->N; ++i) {
     size_t nodeIndex;
     double latitude, longitude;
     fscanf(nodeF, "%zu %lf %lf", &nodeIndex, &latitude, &longitude);
     G->node[nodeIndex].latitude = latitude;
     G->node[nodeIndex].longitude = longitude;
+  }
+
+  size_t interestN;
+  fscanf(interestF, "%zu", &interestN);
+  for (int i = 0; i < interestN; ++i) {
+    size_t index;
+    uint8_t code;
+    fscanf(interestF, "%zu %" SCNu8 " %*[^\n]", &index, &code);
+    G->node[index].nodeCode = code;
   }
 
   return G;

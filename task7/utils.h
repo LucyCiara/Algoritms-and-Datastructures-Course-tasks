@@ -4,6 +4,7 @@
 /// Imports
 ///////////////////////////////////////////////////////////////////////////////
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -29,6 +30,7 @@ typedef struct node {
   void *d;
   struct fibNode *queueNode;
   double latitude, longitude;
+  uint8_t nodeCode;
 } Node;
 
 // A graph struct containing info about its number of nodes and edges, and an
@@ -45,7 +47,7 @@ typedef struct {
   Node *ancestor;
 } Ancestor;
 
-Graph *newGraph(FILE *edgeF, FILE *nodeF);
+Graph *newGraph(FILE *edgeF, FILE *nodeF, FILE *interestF);
 Graph *newReverseGraph(FILE *edgeF, FILE *nodeF);
 
 void initAncestor(Graph *G, Node *s);

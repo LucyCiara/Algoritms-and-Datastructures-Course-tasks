@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -43,6 +44,30 @@ void dijkstraLogging(FILE *outF, Graph *G, Node *s, Node *t) {
     }
   }
   free(q);
+}
+
+size_t *dijkstraPointsOfInterest(Graph *G, Node *s, size_t N, uint8_t code) {
+  initAncestor(G, s);
+  FibHeap *q = createHeap();
+  addToQueue(q, s);
+
+  size_t *places = malloc(N * sizeof(size_t));
+  size_t counter = 0;
+  while (q->n > 0) {
+    Node *n = popMin(q);
+    if ((n->nodeCode & code) == code) {
+      places[counter] = n->num;
+      if (++counter == N) {
+        emptyQueue(q);
+        free(q);
+        return places;
+      }
+    }
+    for (WEdge *e = (WEdge *)n->edge; e; e = e->next)
+      shorten(q, n, e);
+  }
+  free(q);
+  return places;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
