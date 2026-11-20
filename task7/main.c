@@ -146,7 +146,7 @@ void testAlgorithm(void (*f)(Graph *, Node *, Node *, LandmarkInfo **),
   printf("\n%s\n", algorithmName);
   printf("%-7s  %-7s  %-10s  %-11s  Computation Time\n", "Start", "End",
          "Node Count", "Trip Time");
-  // Test ALT algorithm for every example dataset.
+  // Test algorithm for every example dataset.
   for (int i = 0; i < EXAMPLES; ++i) {
 
     // Run algorithm.
@@ -166,7 +166,7 @@ void testAlgorithm(void (*f)(Graph *, Node *, Node *, LandmarkInfo **),
     int count = 1;
     for (Ancestor *a = (Ancestor *)t->d; a->ancestor; a = a->ancestor->d)
       ++count;
-    printf("%-7i  %-7i  %-10i  %-2i:%-2i:%-5.2f  %.2f\n", starts[i], ends[i],
+    printf("%-7i  %-7i  %-10i  %2i:%2i:%5.2f  %.2f\n", starts[i], ends[i],
            count, hours, minutes, seconds, timeInSeconds);
 
     // Assert info with answers and free ancestors.
@@ -175,6 +175,42 @@ void testAlgorithm(void (*f)(Graph *, Node *, Node *, LandmarkInfo **),
     assert((int)seconds == secondResult[i]);
     freeAncestors(G);
   }
+  freeLandmarkInfos(landmarkInfos, G, LN);
+}
+
+void testAlgorithmInput(void (*f)(Graph *, Node *, Node *, LandmarkInfo **),
+                        char algorithmName[], int start, int end) {
+  Graph *G = createGraph();
+
+  // Get preprocessing data from file.
+  size_t landmarks[LN];
+  LandmarkInfo **landmarkInfos = readPreprocess(G, landmarks);
+
+  printf("\n%s\n", algorithmName);
+  printf("%-7s  %-7s  %-10s  %-11s  Computation Time\n", "Start", "End",
+         "Node Count", "Trip Time");
+
+  // Run algorithm.
+  Node *s = &G->node[start], *t = &G->node[end];
+
+  clock_t time;
+  time = clock();
+  f(G, s, t, landmarkInfos);
+  time = clock() - time;
+  double timeInSeconds = ((double)time) / CLOCKS_PER_SEC;
+
+  // Get path infos and print them.
+  long long dist = ((Ancestor *)t->d)->dist;
+  double seconds = centiSecondsToSeconds(dist);
+  int minutes = extractMinutes(&seconds);
+  int hours = extractHours(&minutes);
+  int count = 1;
+  for (Ancestor *a = (Ancestor *)t->d; a->ancestor; a = a->ancestor->d)
+    ++count;
+  printf("%-7i  %-7i  %-10i  %2i:%2i:%5.2f  %.2f\n", start, end, count, hours,
+         minutes, seconds, timeInSeconds);
+
+  freeAncestors(G);
   freeLandmarkInfos(landmarkInfos, G, LN);
 }
 
@@ -232,7 +268,7 @@ void writeAlgorithmCoords(void (*f)(Graph *, Node *, Node *, char[],
   size_t landmarks[LN];
   LandmarkInfo **landmarkInfos = readPreprocess(G, landmarks);
 
-  printf("%s\n", algorithmName);
+  printf("\n%s\n", algorithmName);
 
   for (size_t i = 0; i < EXAMPLES; ++i) {
     size_t outFNameLen = strlen(algorithmName) + strlen(COORD_FILE_NAME) +
@@ -285,19 +321,87 @@ void writeAlgorithmCoords(void (*f)(Graph *, Node *, Node *, char[],
   freeLandmarkInfos(landmarkInfos, G, LN);
 }
 
+void writeAlgorithmCoordInput(void (*f)(Graph *, Node *, Node *, char[],
+                                        LandmarkInfo **),
+                              char algorithmName[], int start, int end) {
+  Graph *G = createGraph();
+
+  // Get preprocessing data from file.
+  size_t landmarks[LN];
+  LandmarkInfo **landmarkInfos = readPreprocess(G, landmarks);
+
+  printf("\n%s\n", algorithmName);
+
+  char outFName[] = "coordinates.csv";
+  char outFTrimmedName[] = "coordinatesTrimmed.csv";
+  char outFStartAndStop[] = "startStop.csv";
+
+  // Run coordinateWriting algorithm.
+  Node *s = &G->node[start], *t = &G->node[end];
+  f(G, s, t, outFName, landmarkInfos);
+  freeAncestors(G);
+
+  // Count number of lines in pathfinding file.
+  FILE *inF = fopen(outFName, "r");
+  size_t lines = countLines(inF);
+  fclose(inF);
+  printf("Number of nodes explored: %zu\n", lines);
+
+  // Trim pathfinding file.
+  inF = fopen(outFName, "r");
+  FILE *trimmedF = fopen(outFTrimmedName, "w+");
+  trimFile(inF, trimmedF, lines);
+  fclose(trimmedF);
+  fclose(inF);
+
+  // Write start and stop coordinates to a file.
+  FILE *startStopF = fopen(outFStartAndStop, "w+");
+  fprintf(startStopF, "%lf,%lf\n", s->latitude, s->longitude);
+  fprintf(startStopF, "%lf,%lf\n", t->latitude, t->longitude);
+  fclose(startStopF);
+  freeLandmarkInfos(landmarkInfos, G, LN);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /// Main method
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[]) {
-  // // Opens a file for writing visitations of the algorithm.
-  // FILE *coordOutF = fopen("visitation.txt", "w+");
+  if (argc < 2) {
+    printf("Run program in the format of './main -flag'\n");
+    return 1;
+  }
 
-  preprocess();
-  testAlgorithm(testDijkstraCorrect, "Dijkstra");
-  testAlgorithm(testALTCorrect, "ALT");
-  // writeAlgorithmCoords(executeDijkstraWrite, "dijkstra");
-  // writeAlgorithmCoords(executeALTWrite, "ALT");
-  //
+  if (strcmp(argv[1], "-p") == 0 || strcmp(argv[1], "--preprocess") == 0) {
+    preprocess();
+  } else if (strcmp(argv[1], "-t") == 0 || strcmp(argv[1], "--test") == 0) {
+    testAlgorithm(testDijkstraCorrect, "Dijkstra");
+    testAlgorithm(testALTCorrect, "ALT");
+    writeAlgorithmCoords(executeDijkstraWrite, "dijkstra");
+    writeAlgorithmCoords(executeALTWrite, "ALT");
+  } else if ((strcmp(argv[1], "-d") == 0 ||
+              strcmp(argv[1], "--dijkstra") == 0 ||
+              strcmp(argv[1], "-a") == 0 || strcmp(argv[1], "--alt") == 0 ||
+              strcmp(argv[1], "-c") == 0 ||
+              strcmp(argv[1], "--coordinates") == 0) &&
+             argc >= 3) {
+    int start = atoi(argv[2]);
+    int end = atoi(argv[3]);
+    if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "--dijkstra") == 0) {
+      if (argc == 4) {
+        testAlgorithmInput(testDijkstraCorrect, "Dijkstra", start, end);
+      } else if (argc == 5 &&
+                 (strcmp(argv[4], "-c") || strcmp(argv[4], "--coordinates"))) {
+        writeAlgorithmCoordInput(executeDijkstraWrite, "Dijkstra", start, end);
+      }
+    } else if (strcmp(argv[1], "-a") == 0 || strcmp(argv[1], "--alt") == 0) {
+      if (argc == 4) {
+        testAlgorithmInput(testALTCorrect, "ALT", start, end);
+      } else if (argc == 5 && (strcmp(argv[4], "-c") == 0 ||
+                               strcmp(argv[4], "--coordinates") == 0)) {
+        writeAlgorithmCoordInput(executeALTWrite, "ALT", start, end);
+      }
+    }
+  }
   return 0;
 }
