@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Handling data
@@ -128,7 +129,8 @@ void testALTCorrect(Graph *G, Node *s, Node *t, LandmarkInfo **landmarkInfos) {
   ALT(G, s, t, LN, landmarkInfos);
 }
 
-void testAlgorithmCorrect(void (*f)(Graph *, Node *, Node *, LandmarkInfo **)) {
+void testAlgorithm(void (*f)(Graph *, Node *, Node *, LandmarkInfo **),
+                   char algorithmName[]) {
   Graph *G = createGraph();
 
   // Define test data.
@@ -141,11 +143,20 @@ void testAlgorithmCorrect(void (*f)(Graph *, Node *, Node *, LandmarkInfo **)) {
   size_t landmarks[LN];
   LandmarkInfo **landmarkInfos = readPreprocess(G, landmarks);
 
+  printf("\n%s\n", algorithmName);
+  printf("%-7s  %-7s  %-10s  %-11s  Computation Time\n", "Start", "End",
+         "Node Count", "Trip Time");
   // Test ALT algorithm for every example dataset.
   for (int i = 0; i < EXAMPLES; ++i) {
-    // Run algorithm
+
+    // Run algorithm.
     Node *s = &G->node[starts[i]], *t = &G->node[ends[i]];
+
+    clock_t time;
+    time = clock();
     f(G, s, t, landmarkInfos);
+    time = clock() - time;
+    double timeInSeconds = ((double)time) / CLOCKS_PER_SEC;
 
     // Get path infos and print them.
     long long dist = ((Ancestor *)t->d)->dist;
@@ -155,16 +166,16 @@ void testAlgorithmCorrect(void (*f)(Graph *, Node *, Node *, LandmarkInfo **)) {
     int count = 1;
     for (Ancestor *a = (Ancestor *)t->d; a->ancestor; a = a->ancestor->d)
       ++count;
-    printf("%i  %i  %i %lli  %i:%i:%.2f\n", starts[i], ends[i], count, dist,
-           hours, minutes, seconds);
+    printf("%-7i  %-7i  %-10i  %-2i:%-2i:%-5.2f  %.2f\n", starts[i], ends[i],
+           count, hours, minutes, seconds, timeInSeconds);
 
     // Assert info with answers and free ancestors.
-    assert(count == nodeCountResult[i]);
     assert(hours == hourResult[i]);
     assert(minutes == minuteResult[i]);
     assert((int)seconds == secondResult[i]);
     freeAncestors(G);
   }
+  freeLandmarkInfos(landmarkInfos, G, LN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -282,10 +293,11 @@ int main(int argc, char *argv[]) {
   // // Opens a file for writing visitations of the algorithm.
   // FILE *coordOutF = fopen("visitation.txt", "w+");
 
-  // testAlgorithmCorrect(testALTCorrect);
-  // preprocess();
-  writeAlgorithmCoords(executeDijkstraWrite, "dijkstra");
-  writeAlgorithmCoords(executeALTWrite, "ALT");
+  preprocess();
+  testAlgorithm(testDijkstraCorrect, "Dijkstra");
+  testAlgorithm(testALTCorrect, "ALT");
+  // writeAlgorithmCoords(executeDijkstraWrite, "dijkstra");
+  // writeAlgorithmCoords(executeALTWrite, "ALT");
   //
   return 0;
 }

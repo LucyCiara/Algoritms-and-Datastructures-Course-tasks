@@ -70,6 +70,10 @@ void writeLandmarkMap(FILE *outF, Graph *G, Graph *R, size_t l) {
   for (size_t i = 0; i < G->N; ++i) {
     long long dist = ((Ancestor *)G->node[i].d)->dist;
     long long rDist = ((Ancestor *)R->node[i].d)->dist;
+    if (dist == LLONG_MAX)
+      dist = 0;
+    if (rDist == LLONG_MAX)
+      dist = 0;
     fprintf(outF, "%zu %lli %lli\n", i, dist, rDist);
   }
   freeAncestors(G);
@@ -93,9 +97,9 @@ LandmarkInfo *readLandmarkMap(FILE *inF, Graph *G, size_t *l) {
 }
 
 long long max(long long x, long long y, long long z) {
-  if (x >= y && x > z)
+  if (x >= y && x >= z)
     return x;
-  if (y > x && y > z)
+  if (y > x && y >= z)
     return y;
 
   return z;
@@ -105,17 +109,10 @@ void setHeruistic(Node *n, Node *t, int LN, LandmarkInfo **landmarkInfos) {
   long long heuristic = 0;
   for (int i = 0; i < LN; ++i) {
     long long candidate1 = 0;
-    if (landmarkInfos[i]->to[n->num] != LLONG_MAX &&
-        landmarkInfos[i]->to[t->num] != LLONG_MAX) {
-      candidate1 =
-          landmarkInfos[i]->to[t->num] - landmarkInfos[i]->from[n->num];
-    }
+    candidate1 = landmarkInfos[i]->to[t->num] - landmarkInfos[i]->to[n->num];
     long long candidate2 = 0;
-    if (landmarkInfos[i]->from[n->num] != LLONG_MAX &&
-        landmarkInfos[i]->from[t->num] != LLONG_MAX) {
-      candidate2 =
-          landmarkInfos[i]->from[n->num] - landmarkInfos[i]->from[t->num];
-    }
+    candidate2 =
+        landmarkInfos[i]->from[n->num] - landmarkInfos[i]->from[t->num];
     heuristic = max(heuristic, candidate1, candidate2);
   }
   ((Ancestor *)n->d)->heuristic = heuristic;
