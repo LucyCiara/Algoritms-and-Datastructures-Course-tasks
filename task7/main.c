@@ -29,6 +29,8 @@ Graph *createGraph() {
   return G;
 }
 
+// The reversed graph is important in heuristic calculations, since the edges
+// are one-directional.
 Graph *createReverseGraph() {
   // Create graph from file with edge info.
   FILE *edgeF = fopen(EDGE_FILE, "r");
@@ -92,6 +94,8 @@ void defineTestData(int *starts, int *ends, int *nodeCountResult,
 #define LANDMARK_FILENAMES (char *[4]){"l1.txt", "l2.txt", "l3.txt", "l4.txt"}
 #define LN 4
 
+// Finds the distance to and from every point in the graph and the landmarks.
+// Writes this find to file.
 void preprocess() {
   Graph *G = createGraph();
   Graph *R = createReverseGraph();
@@ -109,6 +113,7 @@ void preprocess() {
   free(G);
 }
 
+// Extracts information about the landmarks  from files.
 LandmarkInfo **readPreprocess(Graph *G, size_t landmarks[LN]) {
   LandmarkInfo **landmarkInfos = malloc(LN * sizeof *landmarkInfos);
   for (int i = 0; i < LN; ++i) {
@@ -236,17 +241,6 @@ size_t countLines(FILE *f) {
   return i;
 }
 
-void trimFile(FILE *inF, FILE *outF, size_t lineCount) {
-  size_t retainCounter = lineCount / COORD_ENTRY_LIMIT;
-  char buffer[19];
-  for (int i = 0; i < lineCount; ++i) {
-    fscanf(inF, "%18[^\n]\n", buffer);
-    if (i % (retainCounter + 1) == 0) {
-      fprintf(outF, "%s\n", buffer);
-    }
-  }
-}
-
 void executeDijkstraWrite(Graph *G, Node *s, Node *t, char outFName[],
                           LandmarkInfo **landmarkInfos) {
   // Write pathfinding to file.
@@ -309,13 +303,6 @@ void writeAlgorithmCoords(void (*f)(Graph *, Node *, Node *, char[],
     fclose(inF);
     printf("Number of nodes explored: %zu\n", lines);
 
-    // Trim pathfinding file.
-    inF = fopen(outFName, "r");
-    FILE *trimmedF = fopen(outFTrimmedName, "w+");
-    trimFile(inF, trimmedF, lines);
-    fclose(trimmedF);
-    fclose(inF);
-
     // Write start and stop coordinates to a file.
     FILE *startStopF = fopen(outFStartAndStop, "w+");
     fprintf(startStopF, "%lf,%lf\n", s->latitude, s->longitude);
@@ -339,10 +326,19 @@ void writeAlgorithmCoordInput(void (*f)(Graph *, Node *, Node *, char[],
   char outFName[] = "coordinates.csv";
   char outFTrimmedName[] = "coordinatesTrimmed.csv";
   char outFStartAndStop[] = "startStop.csv";
+  char outFPath[] = "path.csv";
 
   // Run coordinateWriting algorithm.
   Node *s = &G->node[start], *t = &G->node[end];
   f(G, s, t, outFName, landmarkInfos);
+
+  FILE *pathF = fopen(outFPath, "w+");
+  for (Ancestor *d = t->d; d->ancestor && d->ancestor->d != NULL;
+       d = d->ancestor->d) {
+    fprintf(pathF, "%f,%f\n", d->ancestor->latitude, d->ancestor->longitude);
+  }
+  fclose(pathF);
+
   freeAncestors(G);
 
   // Count number of lines in pathfinding file.
@@ -350,13 +346,6 @@ void writeAlgorithmCoordInput(void (*f)(Graph *, Node *, Node *, char[],
   size_t lines = countLines(inF);
   fclose(inF);
   printf("Number of nodes explored: %zu\n", lines);
-
-  // Trim pathfinding file.
-  inF = fopen(outFName, "r");
-  FILE *trimmedF = fopen(outFTrimmedName, "w+");
-  trimFile(inF, trimmedF, lines);
-  fclose(trimmedF);
-  fclose(inF);
 
   // Write start and stop coordinates to a file.
   FILE *startStopF = fopen(outFStartAndStop, "w+");
@@ -390,7 +379,7 @@ int main(int argc, char *argv[]) {
               strcmp(argv[1], "-a") == 0 || strcmp(argv[1], "--alt") == 0 ||
               strcmp(argv[1], "-c") == 0 ||
               strcmp(argv[1], "--coordinates") == 0) &&
-             argc >= 3) {
+             argc >= 4) {
     size_t start = strtoul(argv[2], NULL, 10);
     size_t end = strtoul(argv[3], NULL, 10);
     if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "--dijkstra") == 0) {
@@ -409,16 +398,20 @@ int main(int argc, char *argv[]) {
       }
     }
   } else if ((strcmp(argv[1], "-i") == 0 ||
-              strcmp(argv[1], "--interessepunkter") == 0) &&
-             argc == 4) {
+              strcmp(argv[1], "--points-of-interest") == 0) &&
+             argc >= 4) {
     size_t start = strtoul(argv[2], NULL, 10);
-    uint8_t code = strtoul(argv[3], NULL, 10);
+    size_t CN = argc - 3;
+    uint8_t codes[CN];
+    for (size_t i = 3; i < argc; ++i) {
+      codes[i - 3] = strtoul(argv[i], NULL, 10);
+    }
     Graph *G = createGraph();
-    size_t N = 4;
+    size_t PN = 4;
     size_t *pointsOfInterest =
-        dijkstraPointsOfInterest(G, &G->node[start], N, code);
+        dijkstraPointsOfInterest(G, &G->node[start], PN, CN, codes);
     printf("The closest points of interest are:\n");
-    for (size_t i = 0; i < N; ++i) {
+    for (size_t i = 0; i < PN; ++i) {
       printf("%zu\n", pointsOfInterest[i]);
     }
   }

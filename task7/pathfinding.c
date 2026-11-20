@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -46,21 +47,25 @@ void dijkstraLogging(FILE *outF, Graph *G, Node *s, Node *t) {
   free(q);
 }
 
-size_t *dijkstraPointsOfInterest(Graph *G, Node *s, size_t N, uint8_t code) {
+size_t *dijkstraPointsOfInterest(Graph *G, Node *s, size_t PN, size_t CN,
+                                 uint8_t *codes) {
   initAncestor(G, s);
   FibHeap *q = createHeap();
   addToQueue(q, s);
 
-  size_t *places = malloc(N * sizeof(size_t));
+  size_t *places = malloc(PN * sizeof(size_t));
   size_t counter = 0;
   while (q->n > 0) {
     Node *n = popMin(q);
-    if ((n->nodeCode & code) == code) {
-      places[counter] = n->num;
-      if (++counter == N) {
-        emptyQueue(q);
-        free(q);
-        return places;
+    for (size_t i = 0; i < CN; ++i) {
+      if ((n->nodeCode & codes[i]) == codes[i]) {
+        places[counter] = n->num;
+        if (++counter == PN) {
+          emptyQueue(q);
+          free(q);
+          return places;
+        }
+        break;
       }
     }
     for (WEdge *e = (WEdge *)n->edge; e; e = e->next)
@@ -95,10 +100,6 @@ void writeLandmarkMap(FILE *outF, Graph *G, Graph *R, size_t l) {
   for (size_t i = 0; i < G->N; ++i) {
     long long dist = ((Ancestor *)G->node[i].d)->dist;
     long long rDist = ((Ancestor *)R->node[i].d)->dist;
-    if (dist == LLONG_MAX)
-      dist = 0;
-    if (rDist == LLONG_MAX)
-      dist = 0;
     fprintf(outF, "%zu %lli %lli\n", i, dist, rDist);
   }
   freeAncestors(G);
@@ -134,10 +135,14 @@ void setHeruistic(Node *n, Node *t, int LN, LandmarkInfo **landmarkInfos) {
   long long heuristic = 0;
   for (int i = 0; i < LN; ++i) {
     long long candidate1 = 0;
-    candidate1 = landmarkInfos[i]->to[t->num] - landmarkInfos[i]->to[n->num];
+    if (landmarkInfos[i]->to[t->num] != LLONG_MAX &&
+        landmarkInfos[i]->to[n->num] != LLONG_MAX)
+      candidate1 = landmarkInfos[i]->to[t->num] - landmarkInfos[i]->to[n->num];
     long long candidate2 = 0;
-    candidate2 =
-        landmarkInfos[i]->from[n->num] - landmarkInfos[i]->from[t->num];
+    if (landmarkInfos[i]->from[n->num] != LLONG_MAX &&
+        landmarkInfos[i]->from[t->num])
+      candidate2 =
+          landmarkInfos[i]->from[n->num] - landmarkInfos[i]->from[t->num];
     heuristic = max(heuristic, candidate1, candidate2);
   }
   ((Ancestor *)n->d)->heuristic = heuristic;
@@ -154,7 +159,8 @@ void ALT(Graph *G, Node *s, Node *t, int LN, LandmarkInfo **landmarkInfos) {
       return;
     }
     for (WEdge *e = (WEdge *)n->edge; e; e = e->next) {
-      setHeruistic(e->to, t, LN, landmarkInfos);
+      if (((Ancestor *)e->to->d)->dist != INFINITY)
+        setHeruistic(e->to, t, LN, landmarkInfos);
       shorten(q, n, e);
     }
   }

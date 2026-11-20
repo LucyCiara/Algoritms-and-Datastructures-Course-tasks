@@ -1,0 +1,164 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage[colorlinks]{hyperref}
+\usepackage{float}
+
+\title{IDATT2101 - 7}
+\author{Lucy Ciara Herud-Thomassen}
+\begin{document}
+  \maketitle
+  \begin{section}{Dijkstra vs ALT}
+    \begin{subsection}{Example paths time comparison}
+      \autoref{fig1}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{example-times.png}
+          \caption{Each example path taken}
+        \end{center}
+        \label{fig1}
+      \end{figure}
+      As can be seen above, the time taken is comparable at shorter paths, but ALT tends to be slightly faster than dijkstra on longer paths. This is as expected, as ALT has some overhead despite the fewer nodes explored, and should therefore outperform dijkstra on larger paths rather than shorter ones. Additionally, the time measurements include operations like freeing queue and initiating ancestors, which would also set a lower floor for both dijkstra and ALT.
+
+      Curiously, the ALT and dijkstra algorithms have a different number of nodes in their found paths for the last 2 examples despite their identical times, which is probably because having multiple possible shortest paths increase in likelihood when the paths are longer.
+    \end{subsection}
+    \begin{subsection}{Number of nodes processed}
+      \autoref{fig2}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{example-nodes-processed.png}
+          \caption{Number of nodes processed for each path}
+        \end{center}
+        \label{fig2}
+      \end{figure}
+      When we look at the number of nodes processed by these algorithms, we see that the ALT algorithm has varying degrees of less nodes processed compared to the dijkstra algorithm.
+    \end{subsection} 
+    \begin{subsection}{Reflection on results and ALT implementation}
+      Although the ALT algorithm tended to be slightly faster than dijkstra for longer paths, I believe it could be improved upon further. As of now, landmarks are found by finding the nodes furthest in each cardinal direction. 4 nodes is enough to have a considerable amount of landmarks to narrow the processing direction, while not being too big as to require too much memory. Having the landmarks be at the borders of the graph maximizes the likelihood of n-t-L being on a straight-ish line, producing the most optimal heuristic. However, the problem with my implementation is that a lot of the landmarks end up being unreachable from a lot of the node searches, rendering them useless and a burden on the ALT algorithm's processing time. A way to fix this might be to drop checking the landmarks that are known to be unreachable from the start/end nodes, since this will mean it's unreachable for every other node. If this is combined with finding 4 cardinal landmarks for each connected space (that's large enough for it to be worth it), it could ensure every ALT search has exactly 4 landmarks to check against (for larger node clusters). It would however still require a lot of memory.
+
+      The specific landmarks that ended up being used are 5168024, 5104329, 1102516 and 3128455.
+    \end{subsection}
+  \end{section}
+
+  \begin{section}{Points of Interest}
+    \autoref{fig11}
+    \begin{figure}[H]
+      \begin{center}
+        \includegraphics[width=0.75\linewidth]{closest-points-odense.png}
+        \caption{Closest charging stations to Odense}
+      \end{center}
+      \label{fig11}
+    \end{figure}
+
+    \autoref{fig12}
+    \begin{figure}[H]
+      \begin{center}
+        \includegraphics[width=0.75\linewidth]{closest-points-odense-map.png}
+        \caption{Closest charging stations to Odense displayed on a map}
+      \end{center}
+      \label{fig12}
+    \end{figure}
+    
+    \autoref{fig13}
+    \begin{figure}[H]
+      \begin{center}
+        \includegraphics[width=0.75\linewidth]{closest-points-glos.png}
+        \caption{Closest eating and/or drinking places to Gløshaugen}
+      \end{center}
+      \label{fig13}
+    \end{figure}
+
+    \autoref{fig14}
+    \begin{figure}[H]
+      \begin{center}
+        \includegraphics[width=0.75\linewidth]{closest-points-glos-map.png}
+        \caption{Closest eating and/or drinking places to Gløshaugen displayed on a map}
+      \end{center}
+      \label{fig14}
+    \end{figure}
+  \end{section}
+
+  \begin{section}{Gløs.–Otilienborg and Gløs.–Odense}
+    \begin{subsection}{Gløshaugen-Otilienborg}
+      \autoref{fig3}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{mapGO-Dijkstra.png}
+          \caption{A map of node exploration for the dijkstra algorithm}
+        \end{center}
+        \label{fig3}
+      \end{figure}
+
+      \autoref{fig4}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{testsGO-Dijkstra.png}
+          \caption{Path result and tests for dijkstra algorithm}
+        \end{center}
+        \label{fig4}
+      \end{figure}
+
+      \autoref{fig5}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{mapGO-ALT.png}
+          \caption{A map of node exploration for the ALT algorithm}
+        \end{center}
+        \label{fig5}
+      \end{figure}
+
+      \autoref{fig6}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{testsGO-ALT.png}
+          \caption{Path result and tests for ALT algorithm}
+        \end{center}
+        \label{fig6}
+      \end{figure}
+    
+      Compared to the Dijkstra algorithm for the path from Gløshaugen to Otilienborg, we can see that the ALT algorithm's search is less spread out in the wrong directions. We can also see that the counted number of nodes is less than half. Although the ALT algorithm seems to be slightly faster in processing time, this is a very small difference and not necessarily a sign of ALT being faster than dijkstra.
+    \end{subsection}
+
+
+    \begin{subsection}{Gløshaugen-Odense}
+      \autoref{fig7}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{mapGO2-Dijkstra.png}
+          \caption{A map of node exploration for the dijkstra algorithm}
+        \end{center}
+        \label{fig7}
+      \end{figure}
+
+      \autoref{fig8}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{testsGO2-Dijkstra.png}
+          \caption{Path result and tests for dijkstra algorithm}
+        \end{center}
+        \label{fig8}
+      \end{figure}
+
+      \autoref{fig9}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{mapGO2-ALT.png}
+          \caption{A map of node exploration for the ALT algorithm}
+        \end{center}
+        \label{fig9}
+      \end{figure}
+
+      \autoref{fig10}
+      \begin{figure}[H]
+        \begin{center}
+          \includegraphics[width=0.75\linewidth]{testsGO2-ALT.png}
+          \caption{Path result and tests for ALT algorithm}
+        \end{center}
+        \label{fig10}
+      \end{figure}
+      
+      With a longer path, we can see ALT in its element. The overhead now matters much less that the fact that it avoids spreading in every direction indiscriminately, and this is reflected in its lower runtime.
+    \end{subsection}
+
+  \end{section}
+\end{document}
